@@ -242,12 +242,11 @@ body {
   box-shadow: 0 calc(12px * var(--ui-scale)) calc(28px * var(--ui-scale)) rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   cursor: default;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.3s ease;
   will-change: transform;
 }
 
 .name-badge-pill:hover {
-  transform: scale(1.12) !important;
   border-color: var(--color-primary-light);
   z-index: 30;
 }
