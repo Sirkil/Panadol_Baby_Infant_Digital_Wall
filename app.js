@@ -12,7 +12,7 @@
  *
  * Visual:
  *   - Glowing rain streaks rendered on <canvas>
- *   - Names displayed as 90° rotated labels falling with the rain
+ *   - Names displayed as labels falling with the rain
  */
 
 // =========================================================================
@@ -319,7 +319,7 @@ const JOTFORM_CONFIG = {
   }
 
   // =========================================================================
-  // Raining Names Engine (Names Rotated 90° — Fall Downward Like Glowing Rain)
+  // Raining Names Engine (Names Fall Downward Like Glowing Rain)
   // =========================================================================
   function addSubmittedName(nameString, skipAnimation = false) {
     if (!nameString) return;
@@ -337,7 +337,7 @@ const JOTFORM_CONFIG = {
     labelEl.className = 'name-rain-label';
     if (!isRestored) labelEl.classList.add('newly-spawned');
 
-    // Display only the submitted name (rotated via CSS writing-mode)
+    // Display only the submitted name
     labelEl.textContent = nameString;
 
     dom.rainingContainer.appendChild(labelEl);
