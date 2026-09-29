@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panadol - Live Display Wall</title>
+  <meta name="description" content="Panadol live display screen showcasing claims and real-time community submissions.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Instant Responsive Scaling Script (Executes before first paint) -->
+  <script>
+    (function () {
+      function applyScale() {
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var scale = vh > vw 
+          ? Math.max(0.48, Math.min(Math.min(vw / 1080, vh / 1920), 3.5))
+          : Math.max(0.50, Math.min(Math.min(vw / 1920, vh / 1080), 4.0));
+        document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
+      }
+      applyScale();
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient Gradient Background Layer (#EA5297 to #1D1348) -->
+  <div class="ambient-background" id="ambientBg">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+    <div class="ambient-mesh"></div>
+  </div>
+
+  <!-- Raining / Floating Names Canvas Layer -->
+  <div class="raining-names-container" id="rainingContainer" aria-live="polite"></div>
+
+  <!-- Top Right Header with Enlarged Panadol Logo -->
+  <header class="app-header">
+    <div class="logo-wrapper">
+      <img src="assets/Panadol_logo.png" alt="Panadol Logo" class="panadol-logo" id="panadolLogo">
+    </div>
+  </header>
+
+  <!-- Center Stage (Pure text, no card container, no glow in words) -->
+  <main class="center-stage" id="centerStage" role="main">
+    <!-- Claim View -->
+    <div class="stage-view claim-view is-active" id="claimView">
+      <h1 class="claim-text" id="claimText">Gets to work on FEVER in 15 mins</h1>
+    </div>
+
+    <!-- Spotlight Name View -->
+    <div class="stage-view name-view" id="nameView">
+      <h2 class="spotlight-name" id="spotlightName"></h2>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

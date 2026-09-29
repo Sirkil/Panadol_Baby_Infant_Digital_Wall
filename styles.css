@@ -1,0 +1,271 @@
+/* ==========================================================================
+   Panadol - Live Wall Styling
+   Brand Gradient: #EA5297 (Panadol Magenta) & #1D1348 (Deep Navy/Purple)
+   Clean, Containerless Typography & Proportional Responsive Scaling
+   ========================================================================== */
+
+:root {
+  --color-primary: #EA5297;
+  --color-primary-light: #ff85c2;
+  --color-secondary: #1D1348;
+  --color-secondary-dark: #120b30;
+  --color-secondary-light: #2c1e69;
+  --color-white: #ffffff;
+  
+  --font-family-display: 'Outfit', sans-serif;
+  --font-family-body: 'Plus Jakarta Sans', sans-serif;
+  
+  --transition-smooth: all 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Reference Auto-Scale based on 1920x1080 display */
+  --ui-scale: clamp(0.5, min(calc(100vw / 1920), calc(100vh / 1080)), 4.0);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: calc(16px * var(--ui-scale));
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-family-body);
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* ==========================================================================
+   Ambient Gradient Background (#EA5297 to #1D1348)
+   ========================================================================== */
+.ambient-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: 
+    radial-gradient(ellipse at 85% 15%, rgba(234, 82, 151, 0.55) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 85%, rgba(234, 82, 151, 0.4) 0%, transparent 50%),
+    linear-gradient(135deg, #EA5297 0%, #a4286d 28%, #361763 60%, #1D1348 90%, #120b30 100%);
+  overflow: hidden;
+}
+
+.ambient-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(rgba(234, 82, 151, 0.07) 1.5px, transparent 1.5px);
+  background-size: calc(40px * var(--ui-scale)) calc(40px * var(--ui-scale)), 
+                   calc(80px * var(--ui-scale)) calc(80px * var(--ui-scale));
+  background-position: 0 0, calc(20px * var(--ui-scale)) calc(20px * var(--ui-scale));
+  opacity: 0.7;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(calc(90px * var(--ui-scale)));
+  pointer-events: none;
+  opacity: 0.55;
+  animation: floatOrb 20s ease-in-out infinite alternate;
+}
+
+.orb-1 {
+  width: calc(600px * var(--ui-scale));
+  height: calc(600px * var(--ui-scale));
+  background: #EA5297;
+  top: -10%;
+  right: 5%;
+  animation-duration: 22s;
+}
+
+.orb-2 {
+  width: calc(700px * var(--ui-scale));
+  height: calc(700px * var(--ui-scale));
+  background: #2a1668;
+  bottom: -15%;
+  left: -5%;
+  animation-duration: 26s;
+  animation-delay: -5s;
+}
+
+.orb-3 {
+  width: calc(450px * var(--ui-scale));
+  height: calc(450px * var(--ui-scale));
+  background: rgba(234, 82, 151, 0.35);
+  top: 40%;
+  left: 25%;
+  animation-duration: 18s;
+  animation-delay: -9s;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(calc(40px * var(--ui-scale)), calc(-50px * var(--ui-scale))) scale(1.08); }
+  100% { transform: translate(calc(-40px * var(--ui-scale)), calc(40px * var(--ui-scale))) scale(0.96); }
+}
+
+/* ==========================================================================
+   Header & Enlarged Panadol Logo (Locked at Top Right)
+   ========================================================================== */
+.app-header {
+  position: fixed;
+  top: calc(2rem * var(--ui-scale));
+  right: calc(3rem * var(--ui-scale));
+  z-index: 50;
+  pointer-events: none;
+}
+
+.logo-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panadol-logo {
+  height: calc(210px * var(--ui-scale));
+  width: auto;
+  max-width: calc(480px * var(--ui-scale));
+  object-fit: contain;
+  filter: drop-shadow(0 calc(14px * var(--ui-scale)) calc(32px * var(--ui-scale)) rgba(0, 0, 0, 0.5));
+}
+
+/* ==========================================================================
+   Center Stage (Pure Text - Containerless, Crisp & Scalable)
+   ========================================================================== */
+.center-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.stage-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: calc(2rem * var(--ui-scale));
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.96) translateY(calc(15px * var(--ui-scale)));
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.6s;
+}
+
+.stage-view.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1) translateY(0);
+}
+
+.stage-view.is-exiting {
+  opacity: 0;
+  transform: scale(1.03) translateY(calc(-15px * var(--ui-scale)));
+}
+
+/* Claim Typography (No container, No glow, Single Uniform Color) */
+.claim-text {
+  font-family: var(--font-family-display);
+  font-size: calc(4.6rem * var(--ui-scale));
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  color: var(--color-white);
+  text-shadow: none;
+  max-width: calc(1150px * var(--ui-scale));
+  margin: 0 auto;
+}
+
+/* Spotlight Name Typography (Enlarged, Bold & Clean) */
+.spotlight-name {
+  font-family: var(--font-family-display);
+  font-size: calc(6.8rem * var(--ui-scale));
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--color-white);
+  text-shadow: none;
+  word-break: break-word;
+  max-width: calc(1300px * var(--ui-scale));
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   Raining / Floating Names Layer (Enlarged Pill Badges Flowing Up & Down)
+   ========================================================================== */
+.raining-names-container {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.name-badge-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(0.95rem * var(--ui-scale)) calc(2.4rem * var(--ui-scale));
+  background: rgba(255, 255, 255, 0.16);
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(calc(12px * var(--ui-scale)));
+  -webkit-backdrop-filter: blur(calc(12px * var(--ui-scale)));
+  border-radius: 9999px;
+  color: var(--color-white);
+  font-family: var(--font-family-display);
+  font-size: calc(2.2rem * var(--ui-scale));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 calc(12px * var(--ui-scale)) calc(28px * var(--ui-scale)) rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  cursor: default;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+
+.name-badge-pill:hover {
+  transform: scale(1.12) !important;
+  border-color: var(--color-primary-light);
+  z-index: 30;
+}
+
+.name-badge-pill.newly-spawned {
+  animation: badgePopIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes badgePopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(calc(30px * var(--ui-scale)));
+  }
+  70% {
+    transform: scale(1.1) translateY(calc(-5px * var(--ui-scale)));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
