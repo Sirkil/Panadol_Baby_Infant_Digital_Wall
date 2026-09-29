@@ -216,7 +216,7 @@ const JOTFORM_CONFIG = {
   }
 
   // =========================================================================
-  // Raining / Floating Names Engine (Pills Flowing Up & Down)
+  // Raining Names Engine (Names Fall Downward Like Rain, Loop at Bottom)
   // =========================================================================
   function addSubmittedName(nameString, skipAnimation = false) {
     if (!nameString) return;
@@ -239,25 +239,28 @@ const JOTFORM_CONFIG = {
 
     dom.rainingContainer.appendChild(badgeEl);
 
-    // Relative coordinates across screen
-    const relX = 0.06 + Math.random() * 0.84;
-    const relY = isRestored 
-      ? (0.08 + Math.random() * 0.80)
-      : (0.35 + Math.random() * 0.35);
+    // Random horizontal position across screen width
+    const relX = 0.04 + Math.random() * 0.88;
+
+    // Rain start position: restored names scatter across the screen,
+    // new names start above the visible area and fall in
+    const startRelY = isRestored
+      ? (Math.random() * 1.0)   // Scatter across full height on restore
+      : (-0.05 - Math.random() * 0.15); // Start just above the top edge
 
     const badgeObj = {
       el: badgeEl,
       name: nameString,
       relX: relX,
-      baseRelY: relY,
-      // Dynamic vertical flow speed (strictly moves up and down along the Y axis)
-      speedRelY: 0.00095 + Math.random() * 0.00085,
-      amplitude: 40 + Math.random() * 50,
-      frequency: 0.0022 + Math.random() * 0.0018,
-      phase: Math.random() * Math.PI * 2,
+      relY: startRelY,
+      // Fall speed — each name falls at a slightly different rate (like real rain)
+      fallSpeed: 0.0004 + Math.random() * 0.0006,
+      // Subtle horizontal sway for organic movement
+      swayAmplitude: 8 + Math.random() * 14,
+      swayFrequency: 0.001 + Math.random() * 0.002,
+      swayPhase: Math.random() * Math.PI * 2,
       scale: 0.95 + Math.random() * 0.15,
-      opacity: 0.80 + Math.random() * 0.18,
-      direction: Math.random() > 0.5 ? 1 : -1
+      opacity: 0.80 + Math.random() * 0.18
     };
 
     badgeEl.style.opacity = badgeObj.opacity;
@@ -269,7 +272,7 @@ const JOTFORM_CONFIG = {
     const vHeight = window.innerHeight;
     const vWidth = window.innerWidth;
 
-    // Center zone exclusion half-dimensions
+    // Center zone exclusion half-dimensions (dim names behind center text)
     const centerAvoid = {
       halfW: 600 * scale,
       halfH: 160 * scale
@@ -277,26 +280,23 @@ const JOTFORM_CONFIG = {
 
     for (let i = 0; i < state.floatingBadges.length; i++) {
       const b = state.floatingBadges[i];
-      b.phase += b.frequency * 60;
-      
-      // Continuous vertical rain drift (strictly up and down)
-      b.baseRelY += b.speedRelY * b.direction;
 
-      // Smooth turnaround when reaching screen top or bottom boundaries
-      if (b.baseRelY < 0.04) {
-        b.baseRelY = 0.04;
-        b.direction = 1;
-      } else if (b.baseRelY > 0.92) {
-        b.baseRelY = 0.92;
-        b.direction = -1;
+      // ---- RAIN: Steady downward fall ----
+      b.relY += b.fallSpeed;
+
+      // When a name falls past the bottom, respawn it at the top
+      // with a new random X position for variety
+      if (b.relY > 1.08) {
+        b.relY = -0.06 - Math.random() * 0.10;
+        b.relX = 0.04 + Math.random() * 0.88;
       }
 
-      // Vertical wave displacement only
-      const waveY = Math.sin(b.phase) * (b.amplitude * scale);
+      // Gentle horizontal sway (subtle, like wind on rain)
+      b.swayPhase += b.swayFrequency;
+      const swayX = Math.sin(b.swayPhase) * (b.swayAmplitude * scale);
 
-      // X is completely fixed: moves up and down only!
-      const currentX = b.relX * vWidth;
-      const currentY = b.baseRelY * vHeight + waveY;
+      const currentX = b.relX * vWidth + swayX;
+      const currentY = b.relY * vHeight;
 
       // Subtle opacity reduction when passing directly behind center text
       let opacityFactor = 1.0;

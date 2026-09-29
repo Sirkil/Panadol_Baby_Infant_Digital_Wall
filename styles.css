@@ -210,7 +210,7 @@ body {
 }
 
 /* ==========================================================================
-   Raining / Floating Names Layer (Enlarged Pill Badges Flowing Up & Down)
+   Raining Names Layer (Names Fall Like Rain, Loop Continuously)
    ========================================================================== */
 .raining-names-container {
   position: fixed;
@@ -252,19 +252,14 @@ body {
 }
 
 .name-badge-pill.newly-spawned {
-  animation: badgePopIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: badgeFadeIn 0.6s ease-out forwards;
 }
 
-@keyframes badgePopIn {
+@keyframes badgeFadeIn {
   0% {
     opacity: 0;
-    transform: scale(0.3) translateY(calc(30px * var(--ui-scale)));
-  }
-  70% {
-    transform: scale(1.1) translateY(calc(-5px * var(--ui-scale)));
   }
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
   }
 }
