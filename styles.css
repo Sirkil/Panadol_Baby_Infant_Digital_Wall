@@ -1,7 +1,7 @@
 /* ==========================================================================
    Panadol - Live Wall Styling
    Brand Gradient: #EA5297 (Panadol Magenta) & #1D1348 (Deep Navy/Purple)
-   Clean, Containerless Typography & Proportional Responsive Scaling
+   Glowing Rain Effect with Rotated Names
    ========================================================================== */
 
 :root {
@@ -114,12 +114,23 @@ body {
 }
 
 /* ==========================================================================
-   Header & Enlarged Panadol Logo (Locked at Top Right)
+   Glowing Rain Canvas (Full-screen canvas for streak rain effect)
+   ========================================================================== */
+.glow-rain-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Header & Panadol Logo (Centered at Top)
    ========================================================================== */
 .app-header {
   position: fixed;
-  top: calc(2rem * var(--ui-scale));
-  right: calc(3rem * var(--ui-scale));
+  top: calc(1.5rem * var(--ui-scale));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 50;
   pointer-events: none;
 }
@@ -131,12 +142,91 @@ body {
   justify-content: center;
 }
 
+/* Sparkle / glint on the logo */
+.logo-wrapper::after {
+  content: '';
+  position: absolute;
+  top: calc(-6px * var(--ui-scale));
+  right: calc(10px * var(--ui-scale));
+  width: calc(24px * var(--ui-scale));
+  height: calc(24px * var(--ui-scale));
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  animation: sparkle 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
 .panadol-logo {
-  height: calc(210px * var(--ui-scale));
+  height: calc(180px * var(--ui-scale));
   width: auto;
-  max-width: calc(480px * var(--ui-scale));
+  max-width: calc(400px * var(--ui-scale));
   object-fit: contain;
-  filter: drop-shadow(0 calc(14px * var(--ui-scale)) calc(32px * var(--ui-scale)) rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 calc(8px * var(--ui-scale)) calc(24px * var(--ui-scale)) rgba(0, 0, 0, 0.45))
+          drop-shadow(0 0 calc(40px * var(--ui-scale)) rgba(234, 82, 151, 0.25));
+}
+
+/* ==========================================================================
+   QR Code (Centered at Bottom)
+   ========================================================================== */
+.qr-section {
+  position: fixed;
+  bottom: calc(2.5rem * var(--ui-scale));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(0.6rem * var(--ui-scale));
+  pointer-events: none;
+}
+
+.qr-code-wrapper {
+  position: relative;
+  padding: calc(8px * var(--ui-scale));
+  background: rgba(255, 255, 255, 0.08);
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.2);
+  border-radius: calc(12px * var(--ui-scale));
+  backdrop-filter: blur(calc(8px * var(--ui-scale)));
+  -webkit-backdrop-filter: blur(calc(8px * var(--ui-scale)));
+}
+
+/* Glow border animation around QR code */
+.qr-code-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: calc(-2px * var(--ui-scale));
+  border-radius: calc(14px * var(--ui-scale));
+  background: linear-gradient(135deg, rgba(234, 82, 151, 0.5), transparent, rgba(234, 82, 151, 0.5));
+  z-index: -1;
+  animation: qrGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes qrGlow {
+  0% { opacity: 0.4; filter: blur(calc(4px * var(--ui-scale))); }
+  100% { opacity: 0.9; filter: blur(calc(8px * var(--ui-scale))); }
+}
+
+.qr-code-img {
+  width: calc(120px * var(--ui-scale));
+  height: calc(120px * var(--ui-scale));
+  object-fit: contain;
+  display: block;
+  filter: brightness(1.1) drop-shadow(0 0 calc(8px * var(--ui-scale)) rgba(234, 82, 151, 0.4));
+}
+
+.qr-label {
+  font-family: var(--font-family-body);
+  font-size: calc(0.85rem * var(--ui-scale));
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* ==========================================================================
@@ -210,7 +300,7 @@ body {
 }
 
 /* ==========================================================================
-   Raining Names Layer (Names Fall Like Rain, Loop Continuously)
+   Raining Names Layer (Names Rotated 90° and Fall Like Glowing Rain)
    ========================================================================== */
 .raining-names-container {
   position: fixed;
@@ -220,46 +310,78 @@ body {
   overflow: hidden;
 }
 
-.name-badge-pill {
+.name-rain-label {
   position: absolute;
   top: 0;
   left: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc(0.95rem * var(--ui-scale)) calc(2.4rem * var(--ui-scale));
-  background: rgba(255, 255, 255, 0.16);
-  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(calc(12px * var(--ui-scale)));
-  -webkit-backdrop-filter: blur(calc(12px * var(--ui-scale)));
-  border-radius: 9999px;
-  color: var(--color-white);
+  color: rgba(255, 255, 255, 0.75);
   font-family: var(--font-family-display);
-  font-size: calc(2.2rem * var(--ui-scale));
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: calc(1.1rem * var(--ui-scale));
+  font-weight: 600;
+  letter-spacing: 0.04em;
   white-space: nowrap;
-  box-shadow: 0 calc(12px * var(--ui-scale)) calc(28px * var(--ui-scale)) rgba(0, 0, 0, 0.3);
-  pointer-events: auto;
-  cursor: default;
-  transition: border-color 0.3s ease;
+  pointer-events: none;
   will-change: transform;
+
+  /* Rotate 90 degrees — text reads bottom-to-top */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+
+  /* Subtle glow behind the text to match glowing rain effect */
+  text-shadow: 
+    0 0 calc(6px * var(--ui-scale)) rgba(255, 255, 255, 0.5),
+    0 0 calc(14px * var(--ui-scale)) rgba(234, 82, 151, 0.4),
+    0 0 calc(28px * var(--ui-scale)) rgba(234, 82, 151, 0.2);
 }
 
-.name-badge-pill:hover {
-  border-color: var(--color-primary-light);
-  z-index: 30;
+.name-rain-label.newly-spawned {
+  animation: nameFadeIn 0.8s ease-out forwards;
 }
 
-.name-badge-pill.newly-spawned {
-  animation: badgeFadeIn 0.6s ease-out forwards;
+@keyframes nameFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
-@keyframes badgeFadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+/* ==========================================================================
+   Glowing Rain Streak Elements (CSS-based light streaks)
+   ========================================================================== */
+.rain-streak {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(2px * var(--ui-scale));
+  pointer-events: none;
+  will-change: transform;
+  border-radius: 999px;
+}
+
+/* The streak body: a vertical gradient line */
+.rain-streak::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.6) 30%,
+    rgba(255, 255, 255, 0.95) 70%,
+    rgba(234, 82, 151, 0.7) 100%
+  );
+}
+
+/* Glow halo around the streak tip */
+.rain-streak::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(8px * var(--ui-scale));
+  height: calc(8px * var(--ui-scale));
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(234, 82, 151, 0.5) 50%, transparent 100%);
+  filter: blur(calc(2px * var(--ui-scale)));
 }

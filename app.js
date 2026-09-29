@@ -9,6 +9,10 @@
  *   3. Name fades out, next claim fades in ("claim name claim name claim")
  *   4. Name transitions to the canvas and flows up and down as rain
  *   5. Keeps all submitted names shown on screen permanently
+ *
+ * Visual:
+ *   - Glowing rain streaks rendered on <canvas>
+ *   - Names displayed as 90° rotated labels falling with the rain
  */
 
 // =========================================================================
@@ -58,7 +62,8 @@ const JOTFORM_CONFIG = {
     claimText: document.getElementById('claimText'),
     nameView: document.getElementById('nameView'),
     spotlightName: document.getElementById('spotlightName'),
-    rainingContainer: document.getElementById('rainingContainer')
+    rainingContainer: document.getElementById('rainingContainer'),
+    glowRainCanvas: document.getElementById('glowRainCanvas')
   };
 
   // =========================================================================
@@ -73,7 +78,8 @@ const JOTFORM_CONFIG = {
     seenSubmissionIds: new Set(),
     floatingBadges: [],
     currentScale: 1.0,
-    pollTimer: null
+    pollTimer: null,
+    rainStreaks: []
   };
 
   // =========================================================================
@@ -96,6 +102,103 @@ const JOTFORM_CONFIG = {
 
     state.currentScale = scale;
     document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
+
+    // Resize the glowing rain canvas
+    resizeGlowCanvas();
+  }
+
+  // =========================================================================
+  // Glowing Rain Canvas (Luminous Falling Streaks)
+  // =========================================================================
+  function resizeGlowCanvas() {
+    const canvas = dom.glowRainCanvas;
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initGlowRain() {
+    const canvas = dom.glowRainCanvas;
+    if (!canvas) return;
+
+    resizeGlowCanvas();
+
+    const STREAK_COUNT = 120; // Number of rain streaks
+
+    state.rainStreaks = [];
+    for (let i = 0; i < STREAK_COUNT; i++) {
+      state.rainStreaks.push(createRainStreak(true));
+    }
+
+    requestAnimationFrame(renderGlowRain);
+  }
+
+  function createRainStreak(randomizeY) {
+    const scale = state.currentScale || 1;
+    return {
+      x: Math.random() * window.innerWidth,
+      y: randomizeY ? Math.random() * window.innerHeight : -Math.random() * 200,
+      speed: (1.5 + Math.random() * 4.0) * scale,
+      length: (40 + Math.random() * 120) * scale,
+      width: (0.8 + Math.random() * 1.8) * scale,
+      opacity: 0.15 + Math.random() * 0.6,
+      // Color variation — mostly white/pink
+      hue: Math.random() > 0.3 ? 330 : 0, // 330 = magenta/pink, 0 = white-ish
+      brightness: 0.7 + Math.random() * 0.3
+    };
+  }
+
+  function renderGlowRain() {
+    const canvas = dom.glowRainCanvas;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, w, h);
+
+    for (let i = 0; i < state.rainStreaks.length; i++) {
+      const s = state.rainStreaks[i];
+
+      // Move streak downward
+      s.y += s.speed;
+
+      // If streak falls past bottom, respawn at top
+      if (s.y > h + s.length) {
+        s.x = Math.random() * w;
+        s.y = -s.length - Math.random() * 200;
+        s.speed = (1.5 + Math.random() * 4.0) * state.currentScale;
+      }
+
+      // Draw the glowing streak
+      const gradient = ctx.createLinearGradient(s.x, s.y - s.length, s.x, s.y);
+      gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+      gradient.addColorStop(0.3, `rgba(255, 200, 230, ${s.opacity * 0.3})`);
+      gradient.addColorStop(0.7, `rgba(255, 255, 255, ${s.opacity * 0.7})`);
+      gradient.addColorStop(1, `rgba(234, 82, 151, ${s.opacity * 0.9})`);
+
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y - s.length);
+      ctx.lineTo(s.x, s.y);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = s.width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Draw glow at the tip
+      const glowRadius = s.width * 3;
+      const tipGlow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowRadius);
+      tipGlow.addColorStop(0, `rgba(255, 255, 255, ${s.opacity * 0.6})`);
+      tipGlow.addColorStop(0.5, `rgba(234, 82, 151, ${s.opacity * 0.3})`);
+      tipGlow.addColorStop(1, `rgba(234, 82, 151, 0)`);
+
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = tipGlow;
+      ctx.fill();
+    }
+
+    requestAnimationFrame(renderGlowRain);
   }
 
   // =========================================================================
@@ -216,7 +319,7 @@ const JOTFORM_CONFIG = {
   }
 
   // =========================================================================
-  // Raining Names Engine (Names Fall Downward Like Rain, Loop at Bottom)
+  // Raining Names Engine (Names Rotated 90° — Fall Downward Like Glowing Rain)
   // =========================================================================
   function addSubmittedName(nameString, skipAnimation = false) {
     if (!nameString) return;
@@ -230,14 +333,14 @@ const JOTFORM_CONFIG = {
   }
 
   function spawnFloatingBadge(nameString, isRestored = false) {
-    const badgeEl = document.createElement('div');
-    badgeEl.className = 'name-badge-pill';
-    if (!isRestored) badgeEl.classList.add('newly-spawned');
+    const labelEl = document.createElement('div');
+    labelEl.className = 'name-rain-label';
+    if (!isRestored) labelEl.classList.add('newly-spawned');
 
-    // Display only the submitted name (no icon)
-    badgeEl.innerHTML = `<span class="pill-name">${escapeHTML(nameString)}</span>`;
+    // Display only the submitted name (rotated via CSS writing-mode)
+    labelEl.textContent = nameString;
 
-    dom.rainingContainer.appendChild(badgeEl);
+    dom.rainingContainer.appendChild(labelEl);
 
     // Random horizontal position across screen width
     const relX = 0.04 + Math.random() * 0.88;
@@ -249,21 +352,21 @@ const JOTFORM_CONFIG = {
       : (-0.05 - Math.random() * 0.15); // Start just above the top edge
 
     const badgeObj = {
-      el: badgeEl,
+      el: labelEl,
       name: nameString,
       relX: relX,
       relY: startRelY,
       // Fall speed — each name falls at a slightly different rate (like real rain)
-      fallSpeed: 0.0004 + Math.random() * 0.0006,
+      fallSpeed: 0.0003 + Math.random() * 0.0005,
       // Subtle horizontal sway for organic movement
-      swayAmplitude: 8 + Math.random() * 14,
-      swayFrequency: 0.001 + Math.random() * 0.002,
+      swayAmplitude: 4 + Math.random() * 8,
+      swayFrequency: 0.0008 + Math.random() * 0.0015,
       swayPhase: Math.random() * Math.PI * 2,
-      scale: 0.95 + Math.random() * 0.15,
-      opacity: 0.80 + Math.random() * 0.18
+      scale: 0.9 + Math.random() * 0.2,
+      opacity: 0.55 + Math.random() * 0.35
     };
 
-    badgeEl.style.opacity = badgeObj.opacity;
+    labelEl.style.opacity = badgeObj.opacity;
     state.floatingBadges.push(badgeObj);
   }
 
@@ -274,8 +377,8 @@ const JOTFORM_CONFIG = {
 
     // Center zone exclusion half-dimensions (dim names behind center text)
     const centerAvoid = {
-      halfW: 600 * scale,
-      halfH: 160 * scale
+      halfW: 500 * scale,
+      halfH: 140 * scale
     };
 
     for (let i = 0; i < state.floatingBadges.length; i++) {
@@ -304,7 +407,7 @@ const JOTFORM_CONFIG = {
         Math.abs(currentX - vWidth * 0.5) < centerAvoid.halfW &&
         Math.abs(currentY - vHeight * 0.5) < centerAvoid.halfH
       ) {
-        opacityFactor = 0.16;
+        opacityFactor = 0.12;
       }
 
       b.el.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${b.scale})`;
@@ -486,6 +589,9 @@ const JOTFORM_CONFIG = {
 
     // Start floating names rain animation loop
     requestAnimationFrame(animateFloatingBadges);
+
+    // Start glowing rain streaks canvas
+    initGlowRain();
   }
 
   if (document.readyState === 'loading') {

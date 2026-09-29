@@ -37,10 +37,13 @@
     <div class="ambient-mesh"></div>
   </div>
 
-  <!-- Raining / Floating Names Canvas Layer -->
+  <!-- Glowing Rain Streaks Canvas -->
+  <canvas class="glow-rain-canvas" id="glowRainCanvas"></canvas>
+
+  <!-- Raining / Floating Names Layer (Rotated 90°) -->
   <div class="raining-names-container" id="rainingContainer" aria-live="polite"></div>
 
-  <!-- Top Right Header with Enlarged Panadol Logo -->
+  <!-- Top Center Header with Panadol Logo -->
   <header class="app-header">
     <div class="logo-wrapper">
       <img src="assets/Panadol_logo.png" alt="Panadol Logo" class="panadol-logo" id="panadolLogo">
@@ -59,6 +62,13 @@
       <h2 class="spotlight-name" id="spotlightName"></h2>
     </div>
   </main>
+
+  <!-- QR Code Section (Bottom Center) -->
+  <section class="qr-section" id="qrSection">
+    <div class="qr-code-wrapper">
+      <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img" id="qrCodeImg">
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
