@@ -1,15 +1,13 @@
 /* ==========================================================================
    Panadol - Live Wall Styling
-   Brand Gradient: #EA5297 (Panadol Magenta) & #1D1348 (Deep Navy/Purple)
-   Glowing Rain Effect with Falling Names
+   Brand Gradient: #0f0087 (Deep Indigo) to #052fce (Vibrant Royal Blue)
+   Glowing Rain Effect with Falling Names & Interactive Grid View
    ========================================================================== */
 
 :root {
-  --color-primary: #EA5297;
-  --color-primary-light: #ff85c2;
-  --color-secondary: #1D1348;
-  --color-secondary-dark: #120b30;
-  --color-secondary-light: #2c1e69;
+  --color-bg-start: #0f0087;
+  --color-bg-end: #052fce;
+  --color-accent-glow: #1c5bff;
   --color-white: #ffffff;
   
   --font-family-display: 'Outfit', sans-serif;
@@ -36,7 +34,7 @@ body {
   height: 100vh;
   overflow: hidden;
   font-family: var(--font-family-body);
-  background-color: var(--color-secondary);
+  background-color: var(--color-bg-start);
   color: var(--color-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -44,16 +42,13 @@ body {
 }
 
 /* ==========================================================================
-   Ambient Gradient Background (#EA5297 to #1D1348)
+   Ambient Gradient Background (#0f0087 to #052fce)
    ========================================================================== */
 .ambient-background {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: 
-    radial-gradient(ellipse at 85% 15%, rgba(234, 82, 151, 0.55) 0%, transparent 50%),
-    radial-gradient(ellipse at 15% 85%, rgba(234, 82, 151, 0.4) 0%, transparent 50%),
-    linear-gradient(135deg, #EA5297 0%, #a4286d 28%, #361763 60%, #1D1348 90%, #120b30 100%);
+  background: linear-gradient(135deg, #0f0087 0%, #052fce 100%);
   overflow: hidden;
 }
 
@@ -61,12 +56,12 @@ body {
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    radial-gradient(rgba(234, 82, 151, 0.07) 1.5px, transparent 1.5px);
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    radial-gradient(rgba(28, 91, 255, 0.12) 1.5px, transparent 1.5px);
   background-size: calc(40px * var(--ui-scale)) calc(40px * var(--ui-scale)), 
                    calc(80px * var(--ui-scale)) calc(80px * var(--ui-scale));
   background-position: 0 0, calc(20px * var(--ui-scale)) calc(20px * var(--ui-scale));
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .glow-orb {
@@ -74,23 +69,23 @@ body {
   border-radius: 50%;
   filter: blur(calc(90px * var(--ui-scale)));
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.45;
   animation: floatOrb 20s ease-in-out infinite alternate;
 }
 
 .orb-1 {
-  width: calc(600px * var(--ui-scale));
-  height: calc(600px * var(--ui-scale));
-  background: #EA5297;
+  width: calc(650px * var(--ui-scale));
+  height: calc(650px * var(--ui-scale));
+  background: #052fce;
   top: -10%;
   right: 5%;
   animation-duration: 22s;
 }
 
 .orb-2 {
-  width: calc(700px * var(--ui-scale));
-  height: calc(700px * var(--ui-scale));
-  background: #2a1668;
+  width: calc(750px * var(--ui-scale));
+  height: calc(750px * var(--ui-scale));
+  background: #0f0087;
   bottom: -15%;
   left: -5%;
   animation-duration: 26s;
@@ -98,9 +93,9 @@ body {
 }
 
 .orb-3 {
-  width: calc(450px * var(--ui-scale));
-  height: calc(450px * var(--ui-scale));
-  background: rgba(234, 82, 151, 0.35);
+  width: calc(480px * var(--ui-scale));
+  height: calc(480px * var(--ui-scale));
+  background: rgba(28, 91, 255, 0.4);
   top: 40%;
   left: 25%;
   animation-duration: 18s;
@@ -121,112 +116,141 @@ body {
   inset: 0;
   z-index: 5;
   pointer-events: none;
+  transition: opacity 0.5s ease;
 }
 
 /* ==========================================================================
-   Header & Panadol Logo (Centered at Top)
+   Top Bar Header & Logos (Centered, side-by-side with spaces)
    ========================================================================== */
 .app-header {
   position: fixed;
-  top: calc(1.5rem * var(--ui-scale));
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  padding: calc(1rem * var(--ui-scale)) calc(2.5rem * var(--ui-scale));
   z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   pointer-events: none;
 }
 
-.logo-wrapper {
-  position: relative;
+.top-bar-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(3.5rem * var(--ui-scale));
+  pointer-events: auto;
+}
+
+.logo-item {
+  height: calc(150px * var(--ui-scale));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logo-item:hover {
+  transform: translateY(calc(-3px * var(--ui-scale))) scale(1.04);
+}
+
+.header-logo {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* All badge logos are big and have the exact same height (140px) */
+.logo-panadol {
+  height: calc(80px * var(--ui-scale));
+  width: auto;
+  max-width: calc(250px * var(--ui-scale));
+  filter: drop-shadow(0 calc(6px * var(--ui-scale)) calc(22px * var(--ui-scale)) rgba(0, 0, 0, 0.45));
+}
+
+.logo-15mins {
+  height: calc(80px * var(--ui-scale));
+  width: auto;
+  max-width: calc(250px * var(--ui-scale));
+  filter: drop-shadow(0 calc(6px * var(--ui-scale)) calc(20px * var(--ui-scale)) rgba(0, 0, 0, 0.35));
+}
+
+.logo-strawberry {
+  height: calc(80px * var(--ui-scale));
+  width: auto;
+  max-width: calc(250px * var(--ui-scale));
+  filter: drop-shadow(0 calc(6px * var(--ui-scale)) calc(20px * var(--ui-scale)) rgba(0, 0, 0, 0.35));
+}
+
+/* Haleon wordmark: big, bold and in natural colors */
+.logo-haleon {
+  height: calc(40px * var(--ui-scale));
+  width: auto;
+  max-width: calc(500px * var(--ui-scale));
+  filter: drop-shadow(0 calc(3px * var(--ui-scale)) calc(12px * var(--ui-scale)) rgba(0, 0, 0, 0.35));
+}
+
+/* ==========================================================================
+   View Toggle Button (Rain <-> Grid)
+   ========================================================================== */
+.view-toggle-btn {
+  position: fixed;
+  top: calc(1.5rem * var(--ui-scale));
+  right: calc(2.2rem * var(--ui-scale));
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.75rem * var(--ui-scale));
+  padding: calc(0.75rem * var(--ui-scale)) calc(1.4rem * var(--ui-scale));
+  background: rgba(255, 255, 255, 0.12);
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  backdrop-filter: blur(calc(14px * var(--ui-scale)));
+  -webkit-backdrop-filter: blur(calc(14px * var(--ui-scale)));
+  color: #ffffff;
+  font-family: var(--font-family-display);
+  font-size: calc(1.05rem * var(--ui-scale));
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 calc(4px * var(--ui-scale)) calc(20px * var(--ui-scale)) rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.55);
+  transform: translateY(calc(-2px * var(--ui-scale)));
+  box-shadow: 0 calc(8px * var(--ui-scale)) calc(28px * var(--ui-scale)) rgba(5, 47, 206, 0.5);
+}
+
+.view-toggle-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Sparkle / glint on the logo */
-.logo-wrapper::after {
-  content: '';
-  position: absolute;
-  top: calc(-6px * var(--ui-scale));
-  right: calc(10px * var(--ui-scale));
+.btn-icon svg {
   width: calc(24px * var(--ui-scale));
   height: calc(24px * var(--ui-scale));
-  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 70%);
-  border-radius: 50%;
-  animation: sparkle 3s ease-in-out infinite;
-  pointer-events: none;
 }
 
-@keyframes sparkle {
-  0%, 100% { opacity: 0.3; transform: scale(0.6); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-.panadol-logo {
-  height: calc(180px * var(--ui-scale));
-  width: auto;
-  max-width: calc(400px * var(--ui-scale));
-  object-fit: contain;
-  filter: drop-shadow(0 calc(8px * var(--ui-scale)) calc(24px * var(--ui-scale)) rgba(0, 0, 0, 0.45))
-          drop-shadow(0 0 calc(40px * var(--ui-scale)) rgba(234, 82, 151, 0.25));
-}
-
-/* ==========================================================================
-   QR Code (Centered at Bottom)
-   ========================================================================== */
-.qr-section {
-  position: fixed;
-  bottom: calc(2.5rem * var(--ui-scale));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(0.6rem * var(--ui-scale));
-  pointer-events: none;
-}
-
-.qr-code-wrapper {
-  position: relative;
-  padding: calc(8px * var(--ui-scale));
-  background: rgba(255, 255, 255, 0.08);
-  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.2);
-  border-radius: calc(12px * var(--ui-scale));
-  backdrop-filter: blur(calc(8px * var(--ui-scale)));
-  -webkit-backdrop-filter: blur(calc(8px * var(--ui-scale)));
-}
-
-/* Glow border animation around QR code */
-.qr-code-wrapper::before {
-  content: '';
-  position: absolute;
-  inset: calc(-2px * var(--ui-scale));
-  border-radius: calc(14px * var(--ui-scale));
-  background: linear-gradient(135deg, rgba(234, 82, 151, 0.5), transparent, rgba(234, 82, 151, 0.5));
-  z-index: -1;
-  animation: qrGlow 4s ease-in-out infinite alternate;
-}
-
-@keyframes qrGlow {
-  0% { opacity: 0.4; filter: blur(calc(4px * var(--ui-scale))); }
-  100% { opacity: 0.9; filter: blur(calc(8px * var(--ui-scale))); }
-}
-
-.qr-code-img {
-  width: calc(120px * var(--ui-scale));
-  height: calc(120px * var(--ui-scale));
-  object-fit: contain;
-  display: block;
-  filter: brightness(1.1) drop-shadow(0 0 calc(8px * var(--ui-scale)) rgba(234, 82, 151, 0.4));
-}
-
-.qr-label {
-  font-family: var(--font-family-body);
-  font-size: calc(0.85rem * var(--ui-scale));
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.badge-count {
+  background: #ffffff;
+  color: #0f0087;
+  font-size: calc(0.8rem * var(--ui-scale));
+  font-weight: 800;
+  padding: calc(0.12rem * var(--ui-scale)) calc(0.55rem * var(--ui-scale));
+  border-radius: 999px;
+  min-width: calc(22px * var(--ui-scale));
+  text-align: center;
 }
 
 /* ==========================================================================
@@ -243,6 +267,7 @@ body {
   align-items: center;
   text-align: center;
   pointer-events: none;
+  transition: opacity 0.4s ease, visibility 0.4s;
 }
 
 .stage-view {
@@ -272,35 +297,253 @@ body {
   transform: scale(1.03) translateY(calc(-15px * var(--ui-scale)));
 }
 
-/* Claim Typography (No container, No glow, Single Uniform Color) */
+/* Claim Typography: Single Uniform Clean Text "I trust Panadol" */
 .claim-text {
   font-family: var(--font-family-display);
-  font-size: calc(4.6rem * var(--ui-scale));
+  font-size: calc(5.2rem * var(--ui-scale));
   font-weight: 800;
-  line-height: 1.16;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--color-white);
-  text-shadow: none;
-  max-width: calc(1150px * var(--ui-scale));
+  text-shadow: 0 calc(4px * var(--ui-scale)) calc(20px * var(--ui-scale)) rgba(0, 0, 0, 0.35);
+  max-width: calc(1200px * var(--ui-scale));
   margin: 0 auto;
 }
 
-/* Spotlight Name Typography (Enlarged, Bold & Clean) */
-.spotlight-name {
+/* Spotlight View: Doctor Name (Top line) + "I trust Panadol" (Bottom line) */
+.spotlight-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: calc(1400px * var(--ui-scale));
+  margin: 0 auto;
+}
+
+.spotlight-doctor-name {
   font-family: var(--font-family-display);
-  font-size: calc(6.8rem * var(--ui-scale));
+  font-size: calc(6.4rem * var(--ui-scale));
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.08;
   letter-spacing: -0.025em;
   color: var(--color-white);
-  text-shadow: none;
+  text-shadow: 0 calc(6px * var(--ui-scale)) calc(28px * var(--ui-scale)) rgba(0, 0, 0, 0.45);
   word-break: break-word;
-  max-width: calc(1300px * var(--ui-scale));
-  margin: 0 auto;
+}
+
+.spotlight-sub-claim {
+  font-family: var(--font-family-display);
+  font-size: calc(3.4rem * var(--ui-scale));
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: calc(1.2rem * var(--ui-scale));
+  text-shadow: 0 calc(4px * var(--ui-scale)) calc(18px * var(--ui-scale)) rgba(0, 0, 0, 0.35);
 }
 
 /* ==========================================================================
-   Raining Names Layer (Names Fall Like Glowing Rain)
+   Grid View Section (Overlay for all submitted names)
+   ========================================================================== */
+.grid-view-section {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(10.5rem * var(--ui-scale));
+  padding-bottom: calc(7rem * var(--ui-scale));
+  padding-left: calc(3rem * var(--ui-scale));
+  padding-right: calc(3rem * var(--ui-scale));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.97);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.5s;
+}
+
+body.view-mode-grid .grid-view-section {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+body.view-mode-grid .center-stage,
+body.view-mode-grid .raining-names-container {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.view-mode-grid .glow-rain-canvas {
+  opacity: 0.2;
+}
+
+.grid-view-inner {
+  width: 100%;
+  max-width: calc(1480px * var(--ui-scale));
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.grid-view-header {
+  text-align: center;
+  margin-bottom: calc(1.5rem * var(--ui-scale));
+}
+
+.grid-main-heading {
+  font-family: var(--font-family-display);
+  font-size: calc(2.4rem * var(--ui-scale));
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 calc(2px * var(--ui-scale)) calc(12px * var(--ui-scale)) rgba(0, 0, 0, 0.3);
+}
+
+.grid-sub-heading {
+  font-family: var(--font-family-body);
+  font-size: calc(1.1rem * var(--ui-scale));
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: calc(0.3rem * var(--ui-scale));
+}
+
+.grid-cards-container {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(270px * var(--ui-scale)), 1fr));
+  gap: calc(1.2rem * var(--ui-scale));
+  padding: calc(1rem * var(--ui-scale)) calc(0.5rem * var(--ui-scale));
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.grid-cards-container::-webkit-scrollbar {
+  width: calc(8px * var(--ui-scale));
+}
+.grid-cards-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+.grid-cards-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.doctor-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.18);
+  border-radius: calc(14px * var(--ui-scale));
+  padding: calc(1.1rem * var(--ui-scale)) calc(1.3rem * var(--ui-scale));
+  backdrop-filter: blur(calc(12px * var(--ui-scale)));
+  -webkit-backdrop-filter: blur(calc(12px * var(--ui-scale)));
+  display: flex;
+  align-items: center;
+  gap: calc(0.9rem * var(--ui-scale));
+  box-shadow: 0 calc(4px * var(--ui-scale)) calc(16px * var(--ui-scale)) rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: cardEntrance 0.4s ease-out forwards;
+}
+
+.doctor-card:hover {
+  transform: translateY(calc(-3px * var(--ui-scale)));
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 calc(8px * var(--ui-scale)) calc(24px * var(--ui-scale)) rgba(5, 47, 206, 0.45);
+}
+
+@keyframes cardEntrance {
+  0% { opacity: 0; transform: translateY(calc(15px * var(--ui-scale))) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.doctor-card-avatar {
+  width: calc(60px * var(--ui-scale));
+  height: calc(60px * var(--ui-scale));
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.doctor-card-avatar svg {
+  width: calc(28px * var(--ui-scale));
+  height: calc(28px * var(--ui-scale));
+}
+
+.doctor-card-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.doctor-card-name {
+  font-family: var(--font-family-display);
+  font-size: calc(1.2rem * var(--ui-scale));
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctor-card-trust {
+  font-family: var(--font-family-body);
+  font-size: calc(0.82rem * var(--ui-scale));
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: calc(0.15rem * var(--ui-scale));
+}
+
+.grid-empty-message {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: calc(4rem * var(--ui-scale));
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-icon-wrap {
+  width: calc(76px * var(--ui-scale));
+  height: calc(76px * var(--ui-scale));
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: calc(1rem * var(--ui-scale));
+  border: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.15);
+}
+
+.empty-prompt {
+  font-family: var(--font-family-display);
+  font-size: calc(1.6rem * var(--ui-scale));
+  font-weight: 700;
+}
+
+.empty-sub {
+  font-family: var(--font-family-body);
+  font-size: calc(1rem * var(--ui-scale));
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: calc(0.4rem * var(--ui-scale));
+}
+
+/* ==========================================================================
+   Raining Names Layer (Names Fall Downward Like Glowing Rain)
    ========================================================================== */
 .raining-names-container {
   position: fixed;
@@ -308,28 +551,27 @@ body {
   z-index: 10;
   pointer-events: none;
   overflow: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s;
 }
 
 .name-rain-label {
   position: absolute;
   top: 0;
   left: 0;
-  color: rgba(255, 255, 255, 0.75);
+  color: #ffffff;
   font-family: var(--font-family-display);
-  font-size: calc(1.1rem * var(--ui-scale));
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: calc(1.22rem * var(--ui-scale));
+  font-weight: 700;
+  letter-spacing: 0.03em;
   white-space: nowrap;
   pointer-events: none;
   will-change: transform;
 
-
-
-  /* Subtle glow behind the text to match glowing rain effect */
+  /* Pink #EA5297 glow matching the pink rain */
   text-shadow: 
-    0 0 calc(6px * var(--ui-scale)) rgba(255, 255, 255, 0.5),
-    0 0 calc(14px * var(--ui-scale)) rgba(234, 82, 151, 0.4),
-    0 0 calc(28px * var(--ui-scale)) rgba(234, 82, 151, 0.2);
+    0 0 calc(8px * var(--ui-scale)) rgba(255, 255, 255, 0.95),
+    0 0 calc(18px * var(--ui-scale)) rgba(234, 82, 151, 0.85),
+    0 0 calc(36px * var(--ui-scale)) rgba(234, 82, 151, 0.5);
 }
 
 .name-rain-label.newly-spawned {
@@ -342,44 +584,50 @@ body {
 }
 
 /* ==========================================================================
-   Glowing Rain Streak Elements (CSS-based light streaks)
+   QR Code (Centered at Bottom)
    ========================================================================== */
-.rain-streak {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: calc(2px * var(--ui-scale));
-  pointer-events: none;
-  will-change: transform;
-  border-radius: 999px;
-}
-
-/* The streak body: a vertical gradient line */
-.rain-streak::before {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.0) 0%,
-    rgba(255, 255, 255, 0.6) 30%,
-    rgba(255, 255, 255, 0.95) 70%,
-    rgba(234, 82, 151, 0.7) 100%
-  );
-}
-
-/* Glow halo around the streak tip */
-.rain-streak::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
+.qr-section {
+  position: fixed;
+  bottom: calc(2rem * var(--ui-scale));
   left: 50%;
   transform: translateX(-50%);
-  width: calc(8px * var(--ui-scale));
-  height: calc(8px * var(--ui-scale));
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(234, 82, 151, 0.5) 50%, transparent 100%);
-  filter: blur(calc(2px * var(--ui-scale)));
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(0.6rem * var(--ui-scale));
+  pointer-events: none;
+}
+
+.qr-code-wrapper {
+  position: relative;
+  padding: calc(8px * var(--ui-scale));
+  background: rgba(255, 255, 255, 0.1);
+  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.25);
+  border-radius: calc(12px * var(--ui-scale));
+  backdrop-filter: blur(calc(8px * var(--ui-scale)));
+  -webkit-backdrop-filter: blur(calc(8px * var(--ui-scale)));
+}
+
+.qr-code-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: calc(-2px * var(--ui-scale));
+  border-radius: calc(14px * var(--ui-scale));
+  background: linear-gradient(135deg, rgba(28, 91, 255, 0.6), transparent, rgba(5, 47, 206, 0.6));
+  z-index: -1;
+  animation: qrGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes qrGlow {
+  0% { opacity: 0.4; filter: blur(calc(4px * var(--ui-scale))); }
+  100% { opacity: 0.9; filter: blur(calc(8px * var(--ui-scale))); }
+}
+
+.qr-code-img {
+  width: calc(115px * var(--ui-scale));
+  height: calc(115px * var(--ui-scale));
+  object-fit: contain;
+  display: block;
+  filter: brightness(1.1) drop-shadow(0 0 calc(8px * var(--ui-scale)) rgba(5, 47, 206, 0.5));
 }

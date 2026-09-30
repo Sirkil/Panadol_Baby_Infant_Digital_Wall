@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Ambient Gradient Background Layer (#EA5297 to #1D1348) -->
+  <!-- Ambient Gradient Background Layer (#0f0087 to #052fce) -->
   <div class="ambient-background" id="ambientBg">
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
@@ -43,25 +43,78 @@
   <!-- Raining / Floating Names Layer -->
   <div class="raining-names-container" id="rainingContainer" aria-live="polite"></div>
 
-  <!-- Top Center Header with Panadol Logo -->
-  <header class="app-header">
-    <div class="logo-wrapper">
-      <img src="assets/Panadol_logo.png" alt="Panadol Logo" class="panadol-logo" id="panadolLogo">
+  <!-- Top Bar with all logos next to each other -->
+  <header class="app-header" id="appHeader">
+    <div class="top-bar-logos">
+      <div class="logo-item" title="Panadol">
+        <img src="assets/Panadol_logo.png" alt="Panadol Logo" class="header-logo logo-panadol">
+      </div>
+      <div class="logo-item" title="Gets to work on fever in 15 mins">
+        <img src="assets/15mins_Logo.png" alt="15 Mins Logo" class="header-logo logo-15mins">
+      </div>
+      <div class="logo-item" title="Strawberry Flavour">
+        <img src="assets/Strawberry_Logo.png" alt="Strawberry Flavour Logo" class="header-logo logo-strawberry">
+      </div>
+      <div class="logo-item" title="Haleon">
+        <img src="assets/Haleon_Logo.png" alt="Haleon Logo" class="header-logo logo-haleon">
+      </div>
     </div>
   </header>
 
-  <!-- Center Stage (Pure text, no card container, no glow in words) -->
+  <!-- View Toggle Button (Rain <-> Grid) -->
+  <button class="view-toggle-btn" id="viewToggleBtn" aria-label="Toggle between Rain View and Grid View" title="Switch View">
+    <span class="btn-icon" id="toggleIcon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+      </svg>
+    </span>
+    <span class="btn-text" id="toggleText">Grid View</span>
+    <span class="badge-count" id="namesCountBadge">0</span>
+  </button>
+
+  <!-- Center Stage -->
   <main class="center-stage" id="centerStage" role="main">
-    <!-- Claim View -->
+    <!-- Claim View (Only "I trust Panadol") -->
     <div class="stage-view claim-view is-active" id="claimView">
-      <h1 class="claim-text" id="claimText">Gets to work on FEVER in 15 mins</h1>
+      <h1 class="claim-text" id="claimText">I trust Panadol</h1>
     </div>
 
-    <!-- Spotlight Name View -->
+    <!-- Spotlight Name View: Top line Dr. [Name], Bottom line "I trust Panadol" -->
     <div class="stage-view name-view" id="nameView">
-      <h2 class="spotlight-name" id="spotlightName"></h2>
+      <div class="spotlight-content">
+        <h2 class="spotlight-doctor-name" id="spotlightName"></h2>
+        <p class="spotlight-sub-claim" id="spotlightSubClaim">I trust Panadol</p>
+      </div>
     </div>
   </main>
+
+  <!-- Grid View Overlay for all submitted names -->
+  <section class="grid-view-section" id="gridViewSection" aria-hidden="true">
+    <div class="grid-view-inner">
+      <div class="grid-view-header">
+        <h2 class="grid-main-heading">Doctors Who Trust Panadol</h2>
+        <p class="grid-sub-heading">Live Community Wall</p>
+      </div>
+
+      <div class="grid-cards-container" id="gridCardsContainer">
+        <!-- Dynamically rendered doctor cards -->
+      </div>
+
+      <div class="grid-empty-message" id="gridEmptyMessage">
+        <div class="empty-icon-wrap">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <p class="empty-prompt">No doctors registered yet.</p>
+        <p class="empty-sub">Scan the QR code below to add your name to the wall!</p>
+      </div>
+    </div>
+  </section>
 
   <!-- QR Code Section (Bottom Center) -->
   <section class="qr-section" id="qrSection">

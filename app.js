@@ -1,29 +1,26 @@
 /**
  * Panadol - Live Community Display Screen
  * 
- * Flow:
- * Initially: Displays rotating claims in the center of the screen
- * On submission:
- *   1. Claim fades out
- *   2. Submitted Name fades in, stays still for 3 seconds
- *   3. Name fades out, next claim fades in ("claim name claim name claim")
- *   4. Name transitions to the canvas and flows up and down as rain
- *   5. Keeps all submitted names shown on screen permanently
- *
- * Visual:
- *   - Glowing rain streaks rendered on <canvas>
- *   - Names displayed as labels falling with the rain
+ * Features:
+ * 1. Top bar with all logos side-by-side with spaces in between.
+ * 2. Submission spotlight in center:
+ *    - Top line: Dr. [Name]
+ *    - Bottom line: "I trust Panadol"
+ *    - Displayed for 10 seconds.
+ *    - All other claims removed (sole claim is "I trust Panadol").
+ * 3. View Switcher button:
+ *    - Toggles between Rain View and Grid View (showing all submitted doctor names).
+ * 4. Glowing Rain streaks & falling names over #0f0087 to #052fce gradient background.
  */
 
 // =========================================================================
 // ⚙️ JOTFORM CONFIGURATION (Enter your Form details here)
 // =========================================================================
 const JOTFORM_CONFIG = {
-  // 1. Paste your Jotform Link OR Form ID:
-  // Examples: "https://form.jotform.com/240982348239055" or "240982348239055"
+  // 1. Jotform Link OR Form ID:
   formLinkOrId: 'https://form.jotform.com/262711631992056',
 
-  // 2. Paste your Jotform API Key (Read Access from jotform.com/myaccount/api):
+  // 2. Jotform API Key:
   apiKey: 'e04a6ce1d6a481feed7a40cc4e7a2c9a',
 
   // 3. Field IDs (Unique name: {name}, Field IDs: #first_3, #last_3):
@@ -38,21 +35,14 @@ const JOTFORM_CONFIG = {
   'use strict';
 
   // =========================================================================
-  // Claims & Timing Configuration
+  // Timing & Constant Configuration
   // =========================================================================
-  const CLAIMS = [
-    'Gets to work on FEVER in 15 mins',
-    'We Love Panadol',
-    'Starts to relieve Fever in 15 mins',
-    'I trust Panadol',
-    'innovative Formula'
-  ];
+  const NAME_SPOTLIGHT_DURATION = 10000; // 10 seconds display per submitted doctor
+  const STORAGE_KEY_NAMES = 'panadol_live_submitted_names_v4';
+  const STORAGE_KEY_SEEN_IDS = 'panadol_seen_submission_ids_v4';
 
-  const CLAIM_CYCLE_DURATION = 10000;    // 6s display per claim during idle
-  const NAME_SPOTLIGHT_DURATION = 3000; // Stays still for 3 seconds
-  const CLAIM_INTERLUDE_DURATION = 2500;// Brief claim display between consecutive names
-  const STORAGE_KEY_NAMES = 'panadol_live_submitted_names_v3';
-  const STORAGE_KEY_SEEN_IDS = 'panadol_seen_submission_ids_v3';
+  const GRID_ICON_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>`;
+  const RAIN_ICON_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>`;
 
   // =========================================================================
   // DOM Elements
@@ -62,16 +52,22 @@ const JOTFORM_CONFIG = {
     claimText: document.getElementById('claimText'),
     nameView: document.getElementById('nameView'),
     spotlightName: document.getElementById('spotlightName'),
+    spotlightSubClaim: document.getElementById('spotlightSubClaim'),
     rainingContainer: document.getElementById('rainingContainer'),
-    glowRainCanvas: document.getElementById('glowRainCanvas')
+    glowRainCanvas: document.getElementById('glowRainCanvas'),
+    viewToggleBtn: document.getElementById('viewToggleBtn'),
+    toggleIcon: document.getElementById('toggleIcon'),
+    toggleText: document.getElementById('toggleText'),
+    namesCountBadge: document.getElementById('namesCountBadge'),
+    gridViewSection: document.getElementById('gridViewSection'),
+    gridCardsContainer: document.getElementById('gridCardsContainer'),
+    gridEmptyMessage: document.getElementById('gridEmptyMessage')
   };
 
   // =========================================================================
   // Application State
   // =========================================================================
   const state = {
-    currentClaimIndex: 0,
-    claimTimer: null,
     isSpotlightActive: false,
     submissionQueue: [],
     submittedNames: [],
@@ -79,8 +75,20 @@ const JOTFORM_CONFIG = {
     floatingBadges: [],
     currentScale: 1.0,
     pollTimer: null,
-    rainStreaks: []
+    rainStreaks: [],
+    currentView: 'rain' // 'rain' | 'grid'
   };
+
+  // =========================================================================
+  // Helper: Format Doctor Name with "Dr. " prefix
+  // =========================================================================
+  function formatDoctorName(rawName) {
+    if (!rawName) return '';
+    let clean = rawName.trim();
+    // Remove existing Dr./Doctor prefix to avoid duplicates
+    clean = clean.replace(/^(dr\.?|doctor)\s+/i, '');
+    return `Dr. ${clean}`;
+  }
 
   // =========================================================================
   // Responsive Scale Engine
@@ -123,7 +131,7 @@ const JOTFORM_CONFIG = {
 
     resizeGlowCanvas();
 
-    const STREAK_COUNT = 120; // Number of rain streaks
+    const STREAK_COUNT = 60; // Reduced rain by half (from 120)
 
     state.rainStreaks = [];
     for (let i = 0; i < STREAK_COUNT; i++) {
@@ -138,24 +146,25 @@ const JOTFORM_CONFIG = {
     return {
       x: Math.random() * window.innerWidth,
       y: randomizeY ? Math.random() * window.innerHeight : -Math.random() * 200,
-      speed: (1.5 + Math.random() * 4.0) * scale,
-      length: (40 + Math.random() * 120) * scale,
-      width: (0.8 + Math.random() * 1.8) * scale,
-      opacity: 0.15 + Math.random() * 0.6,
-      // Color variation — mostly white/pink
-      hue: Math.random() > 0.3 ? 330 : 0, // 330 = magenta/pink, 0 = white-ish
-      brightness: 0.7 + Math.random() * 0.3
+      speed: (1.6 + Math.random() * 3.8) * scale,
+      length: (50 + Math.random() * 130) * scale,
+      width: (1.2 + Math.random() * 2.0) * scale, // Refined streak width
+      opacity: 0.55 + Math.random() * 0.45
     };
   }
 
   function renderGlowRain() {
     const canvas = dom.glowRainCanvas;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
 
     // Clear the canvas
     ctx.clearRect(0, 0, w, h);
+
+    // Lighter blending for luminous, radiant pink rain
+    ctx.globalCompositeOperation = 'lighter';
 
     for (let i = 0; i < state.rainStreaks.length; i++) {
       const s = state.rainStreaks[i];
@@ -167,15 +176,17 @@ const JOTFORM_CONFIG = {
       if (s.y > h + s.length) {
         s.x = Math.random() * w;
         s.y = -s.length - Math.random() * 200;
-        s.speed = (1.5 + Math.random() * 4.0) * state.currentScale;
+        s.speed = (1.6 + Math.random() * 3.8) * state.currentScale;
+        s.width = (1.2 + Math.random() * 2.0) * state.currentScale;
+        s.opacity = 0.55 + Math.random() * 0.45;
       }
 
-      // Draw the glowing streak
+      // 1. Draw glowing light streak body (white transitioning to pink #EA5297)
       const gradient = ctx.createLinearGradient(s.x, s.y - s.length, s.x, s.y);
       gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
-      gradient.addColorStop(0.3, `rgba(255, 200, 230, ${s.opacity * 0.3})`);
-      gradient.addColorStop(0.7, `rgba(255, 255, 255, ${s.opacity * 0.7})`);
-      gradient.addColorStop(1, `rgba(234, 82, 151, ${s.opacity * 0.9})`);
+      gradient.addColorStop(0.3, `rgba(255, 200, 230, ${s.opacity * 0.4})`);
+      gradient.addColorStop(0.7, `rgba(255, 255, 255, ${s.opacity * 0.85})`);
+      gradient.addColorStop(1, `rgba(234, 82, 151, ${s.opacity})`);
 
       ctx.beginPath();
       ctx.moveTo(s.x, s.y - s.length);
@@ -185,61 +196,38 @@ const JOTFORM_CONFIG = {
       ctx.lineCap = 'round';
       ctx.stroke();
 
-      // Draw glow at the tip
-      const glowRadius = s.width * 3;
+      // 2. Glowing pink #EA5297 halo at the droplet tip
+      const glowRadius = s.width * 3.8;
       const tipGlow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowRadius);
-      tipGlow.addColorStop(0, `rgba(255, 255, 255, ${s.opacity * 0.6})`);
-      tipGlow.addColorStop(0.5, `rgba(234, 82, 151, ${s.opacity * 0.3})`);
+      tipGlow.addColorStop(0, `rgba(255, 255, 255, ${s.opacity * 0.95})`);
+      tipGlow.addColorStop(0.4, `rgba(234, 82, 151, ${s.opacity * 0.75})`);
       tipGlow.addColorStop(1, `rgba(234, 82, 151, 0)`);
 
       ctx.beginPath();
       ctx.arc(s.x, s.y, glowRadius, 0, Math.PI * 2);
       ctx.fillStyle = tipGlow;
       ctx.fill();
+
+      // 3. Crisp white center dot at droplet tip
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.width * 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity * 0.9})`;
+      ctx.fill();
     }
 
+    ctx.globalCompositeOperation = 'source-over';
     requestAnimationFrame(renderGlowRain);
   }
 
   // =========================================================================
-  // Claims Engine (Pure Clean Typography, Single Uniform Color)
-  // =========================================================================
-  function formatClaimText(text) {
-    return escapeHTML(text);
-  }
-
-  function showClaim(index) {
-    if (state.isSpotlightActive) return;
-
-    state.currentClaimIndex = index % CLAIMS.length;
-    const claim = CLAIMS[state.currentClaimIndex];
-
-    dom.claimView.classList.remove('is-active');
-    dom.claimView.classList.add('is-exiting');
-
-    setTimeout(() => {
-      dom.claimText.innerHTML = formatClaimText(claim);
-      dom.claimView.classList.remove('is-exiting');
-      dom.claimView.classList.add('is-active');
-    }, 400);
-
-    clearTimeout(state.claimTimer);
-    state.claimTimer = setTimeout(() => {
-      if (!state.isSpotlightActive) {
-        showClaim((state.currentClaimIndex + 1) % CLAIMS.length);
-      }
-    }, CLAIM_CYCLE_DURATION);
-  }
-
-  // =========================================================================
-  // Submission Flow ("claim name claim name claim")
+  // Submission Flow (Doctor Name with Dr. Prefix on Top Line, 10s Spotlight)
   // =========================================================================
   function queueSubmission(firstName, lastName, submissionId = null) {
     const cleanFirst = (firstName || '').trim();
     const cleanLast = (lastName || '').trim();
-    const fullName = `${cleanFirst} ${cleanLast}`.trim();
+    const rawFullName = `${cleanFirst} ${cleanLast}`.trim();
 
-    if (!fullName) return;
+    if (!rawFullName) return;
 
     if (submissionId) {
       if (state.seenSubmissionIds.has(submissionId)) return;
@@ -247,11 +235,23 @@ const JOTFORM_CONFIG = {
       saveSeenIds();
     }
 
+    const doctorName = formatDoctorName(rawFullName);
+
+    // Add to submission spotlight queue
     state.submissionQueue.push({
-      fullName: fullName,
+      fullName: doctorName,
       id: submissionId || `sub_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
     });
 
+    // Add to permanent floating rain and grid list
+    addSubmittedName(doctorName);
+
+    // If currently on grid view, re-render grid to show new doctor card
+    if (state.currentView === 'grid') {
+      renderGrid();
+    }
+
+    // Trigger spotlight if not currently spotlighting another doctor
     if (!state.isSpotlightActive) {
       processNextSubmission();
     }
@@ -264,54 +264,43 @@ const JOTFORM_CONFIG = {
     }
 
     state.isSpotlightActive = true;
-    clearTimeout(state.claimTimer);
 
     const submission = state.submissionQueue.shift();
 
-    // 1. Current claim fades out
+    // 1. Idle claim fades out
     dom.claimView.classList.remove('is-active');
     dom.claimView.classList.add('is-exiting');
 
     setTimeout(() => {
-      // 2. Name fades in (center)
+      // 2. Doctor Name fades in: Top line Dr. [Name], Bottom line "I trust Panadol"
       dom.spotlightName.textContent = submission.fullName;
+      if (dom.spotlightSubClaim) {
+        dom.spotlightSubClaim.textContent = 'I trust Panadol';
+      }
+
       dom.nameView.classList.remove('is-exiting');
       dom.nameView.classList.add('is-active');
 
-      // 3. Stays still for 3 seconds
+      // 3. Stays still for 10 seconds
       setTimeout(() => {
-        // Name fades out
+        // Spotlight name fades out
         dom.nameView.classList.remove('is-active');
         dom.nameView.classList.add('is-exiting');
 
-        // Add to permanent floating rain list
-        addSubmittedName(submission.fullName);
-
         setTimeout(() => {
-          // 4. Next claim fades in ("claim name claim name claim")
-          state.currentClaimIndex = (state.currentClaimIndex + 1) % CLAIMS.length;
-          const nextClaim = CLAIMS[state.currentClaimIndex];
-          dom.claimText.innerHTML = formatClaimText(nextClaim);
-
           dom.nameView.classList.remove('is-exiting');
-          dom.claimView.classList.remove('is-exiting');
-          dom.claimView.classList.add('is-active');
 
+          // If there is another queued submission, process it next
           if (state.submissionQueue.length > 0) {
-            // Show claim briefly between names
-            state.claimTimer = setTimeout(() => {
-              processNextSubmission();
-            }, CLAIM_INTERLUDE_DURATION);
+            processNextSubmission();
           } else {
-            // Return to regular claim cycling
+            // Return to idle claim "I trust Panadol"
+            dom.claimText.textContent = 'I trust Panadol';
+            dom.claimView.classList.remove('is-exiting');
+            dom.claimView.classList.add('is-active');
             state.isSpotlightActive = false;
-            state.claimTimer = setTimeout(() => {
-              if (!state.isSpotlightActive) {
-                showClaim((state.currentClaimIndex + 1) % CLAIMS.length);
-              }
-            }, CLAIM_CYCLE_DURATION);
           }
-        }, 550);
+        }, 600);
 
       }, NAME_SPOTLIGHT_DURATION);
 
@@ -327,9 +316,17 @@ const JOTFORM_CONFIG = {
     if (!state.submittedNames.includes(nameString)) {
       state.submittedNames.push(nameString);
       saveSubmittedNames();
+      updateCounterBadges();
     }
 
     spawnFloatingBadge(nameString, skipAnimation);
+  }
+
+  function updateCounterBadges() {
+    const total = state.submittedNames.length;
+    if (dom.namesCountBadge) {
+      dom.namesCountBadge.textContent = total;
+    }
   }
 
   function spawnFloatingBadge(nameString, isRestored = false) {
@@ -337,7 +334,7 @@ const JOTFORM_CONFIG = {
     labelEl.className = 'name-rain-label';
     if (!isRestored) labelEl.classList.add('newly-spawned');
 
-    // Display only the submitted name
+    // Display the formatted Doctor name
     labelEl.textContent = nameString;
 
     dom.rainingContainer.appendChild(labelEl);
@@ -345,25 +342,24 @@ const JOTFORM_CONFIG = {
     // Random horizontal position across screen width
     const relX = 0.04 + Math.random() * 0.88;
 
-    // Rain start position: restored names scatter across the screen,
-    // new names start above the visible area and fall in
+    // Rain start position
     const startRelY = isRestored
-      ? (Math.random() * 1.0)   // Scatter across full height on restore
-      : (-0.05 - Math.random() * 0.15); // Start just above the top edge
+      ? (Math.random() * 1.0)
+      : (-0.05 - Math.random() * 0.15);
 
     const badgeObj = {
       el: labelEl,
       name: nameString,
       relX: relX,
       relY: startRelY,
-      // Fall speed — each name falls at a slightly different rate (like real rain)
+      // Fall speed
       fallSpeed: 0.0003 + Math.random() * 0.0005,
       // Subtle horizontal sway for organic movement
       swayAmplitude: 4 + Math.random() * 8,
       swayFrequency: 0.0008 + Math.random() * 0.0015,
       swayPhase: Math.random() * Math.PI * 2,
       scale: 0.9 + Math.random() * 0.2,
-      opacity: 0.55 + Math.random() * 0.35
+      opacity: 0.88 + Math.random() * 0.12 // Increased opacity for raining names
     };
 
     labelEl.style.opacity = badgeObj.opacity;
@@ -377,24 +373,23 @@ const JOTFORM_CONFIG = {
 
     // Center zone exclusion half-dimensions (dim names behind center text)
     const centerAvoid = {
-      halfW: 500 * scale,
-      halfH: 140 * scale
+      halfW: 520 * scale,
+      halfH: 150 * scale
     };
 
     for (let i = 0; i < state.floatingBadges.length; i++) {
       const b = state.floatingBadges[i];
 
-      // ---- RAIN: Steady downward fall ----
+      // Steady downward fall
       b.relY += b.fallSpeed;
 
       // When a name falls past the bottom, respawn it at the top
-      // with a new random X position for variety
       if (b.relY > 1.08) {
         b.relY = -0.06 - Math.random() * 0.10;
         b.relX = 0.04 + Math.random() * 0.88;
       }
 
-      // Gentle horizontal sway (subtle, like wind on rain)
+      // Gentle horizontal sway
       b.swayPhase += b.swayFrequency;
       const swayX = Math.sin(b.swayPhase) * (b.swayAmplitude * scale);
 
@@ -418,23 +413,105 @@ const JOTFORM_CONFIG = {
   }
 
   // =========================================================================
-  // Persistence (Keeps all submitted names on screen)
+  // Grid View Management (Toggle between Rain View & Grid View)
+  // =========================================================================
+  function toggleView() {
+    state.currentView = state.currentView === 'rain' ? 'grid' : 'rain';
+    applyViewMode();
+  }
+
+  function applyViewMode() {
+    if (state.currentView === 'grid') {
+      document.body.classList.add('view-mode-grid');
+      if (dom.toggleText) dom.toggleText.textContent = 'Rain View';
+      if (dom.toggleIcon) dom.toggleIcon.innerHTML = RAIN_ICON_SVG;
+      if (dom.viewToggleBtn) dom.viewToggleBtn.title = 'Switch to Rain View';
+      renderGrid();
+    } else {
+      document.body.classList.remove('view-mode-grid');
+      if (dom.toggleText) dom.toggleText.textContent = 'Grid View';
+      if (dom.toggleIcon) dom.toggleIcon.innerHTML = GRID_ICON_SVG;
+      if (dom.viewToggleBtn) dom.viewToggleBtn.title = 'Switch to Grid View';
+    }
+  }
+
+  function renderGrid() {
+    const container = dom.gridCardsContainer;
+    const emptyMessage = dom.gridEmptyMessage;
+    if (!container) return;
+
+    container.innerHTML = '';
+    const total = state.submittedNames.length;
+    updateCounterBadges();
+
+    if (total === 0) {
+      if (emptyMessage) emptyMessage.style.display = 'flex';
+      return;
+    }
+
+    if (emptyMessage) emptyMessage.style.display = 'none';
+
+    // Render cards for all submitted doctors
+    state.submittedNames.forEach((doctorName, idx) => {
+      const card = document.createElement('div');
+      card.className = 'doctor-card';
+      card.style.animationDelay = `${Math.min(idx * 0.03, 0.8)}s`;
+
+      card.innerHTML = `
+        <div class="doctor-card-avatar" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="doctor-card-info">
+          <div class="doctor-card-name" title="${escapeHTML(doctorName)}">${escapeHTML(doctorName)}</div>
+          <div class="doctor-card-trust">Trusts Panadol</div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  // =========================================================================
+  // Persistence (Keeps all submitted names on screen permanently)
   // =========================================================================
   function loadPersistedData() {
     try {
-      const savedNames = localStorage.getItem(STORAGE_KEY_NAMES);
+      // Migrate or load from v4, fallback to v3
+      let savedNames = localStorage.getItem(STORAGE_KEY_NAMES);
+      if (!savedNames) {
+        savedNames = localStorage.getItem('panadol_live_submitted_names_v3');
+      }
+
       if (savedNames) {
-        state.submittedNames = JSON.parse(savedNames) || [];
+        const rawList = JSON.parse(savedNames) || [];
+        // Ensure all names have the "Dr. " prefix
+        state.submittedNames = rawList.map(name => formatDoctorName(name));
+        // Remove duplicates if any
+        state.submittedNames = Array.from(new Set(state.submittedNames));
+        saveSubmittedNames();
+
         state.submittedNames.forEach(name => spawnFloatingBadge(name, true));
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Could not load persisted names:', e);
+    }
 
     try {
-      const savedIds = localStorage.getItem(STORAGE_KEY_SEEN_IDS);
+      let savedIds = localStorage.getItem(STORAGE_KEY_SEEN_IDS);
+      if (!savedIds) {
+        savedIds = localStorage.getItem('panadol_seen_submission_ids_v3');
+      }
       if (savedIds) {
         state.seenSubmissionIds = new Set(JSON.parse(savedIds) || []);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Could not load seen submission IDs:', e);
+    }
+
+    updateCounterBadges();
   }
 
   function saveSubmittedNames() {
@@ -463,7 +540,7 @@ const JOTFORM_CONFIG = {
     const apiKey = (JOTFORM_CONFIG.apiKey || '').trim();
 
     if (!formId || !apiKey || apiKey.includes('PASTE_YOUR_')) {
-      return; // Waiting for user to configure credentials
+      return;
     }
 
     try {
@@ -560,7 +637,7 @@ const JOTFORM_CONFIG = {
   // Helper
   // =========================================================================
   function escapeHTML(str) {
-    return str
+    return (str || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -578,10 +655,20 @@ const JOTFORM_CONFIG = {
     window.addEventListener('resize', updateResponsiveScale);
     window.addEventListener('orientationchange', updateResponsiveScale);
 
-    initUrlListener();
+    // Setup view toggle button
+    if (dom.viewToggleBtn) {
+      dom.viewToggleBtn.addEventListener('click', toggleView);
+    }
 
-    // Start initial Claim display
-    showClaim(0);
+    // Keyboard shortcut: Press 'v' or 'g' to toggle view
+    window.addEventListener('keydown', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'v' || e.key === 'V' || e.key === 'g' || e.key === 'G') {
+        toggleView();
+      }
+    });
+
+    initUrlListener();
 
     // Start Jotform polling
     pollJotform();
@@ -592,6 +679,10 @@ const JOTFORM_CONFIG = {
 
     // Start glowing rain streaks canvas
     initGlowRain();
+
+    // Allow testing from browser console: testSubmit('John', 'Doe')
+    window.testSubmit = (first, last) => queueSubmission(first, last);
+    window.toggleView = toggleView;
   }
 
   if (document.readyState === 'loading') {
