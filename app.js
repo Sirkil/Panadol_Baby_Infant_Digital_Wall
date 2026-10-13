@@ -2,15 +2,15 @@
  * Panadol - Live Community Display Screen
  * 
  * Features:
- * 1. Top bar with all logos side-by-side with spaces in between.
+ * 1. Panadol branding with the 15-minute and 70-year claims highlighted.
  * 2. Submission spotlight in center:
  *    - Top line: Dr. [Name]
  *    - Bottom line: "I trust Panadol"
  *    - Displayed for 10 seconds.
- *    - All other claims removed (sole claim is "I trust Panadol").
+ *    - Center-stage message remains "I trust Panadol".
  * 3. View Switcher button:
  *    - Toggles between Rain View and Grid View (showing all submitted doctor names).
- * 4. Glowing Rain streaks & falling names over #0f0087 to #052fce gradient background.
+ * 4. Glowing rain, falling strawberries and names over the blue background.
  */
 
 // =========================================================================
@@ -43,16 +43,16 @@ const JOTFORM_CONFIG = {
 
   const GRID_ICON_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>`;
   const RAIN_ICON_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>`;
+  const strawberryImage = new Image();
+  strawberryImage.src = 'assets/Strawberry_Logo.png';
 
   // =========================================================================
   // DOM Elements
   // =========================================================================
   const dom = {
     claimView: document.getElementById('claimView'),
-    claimText: document.getElementById('claimText'),
     nameView: document.getElementById('nameView'),
     spotlightName: document.getElementById('spotlightName'),
-    spotlightSubClaim: document.getElementById('spotlightSubClaim'),
     rainingContainer: document.getElementById('rainingContainer'),
     glowRainCanvas: document.getElementById('glowRainCanvas'),
     viewToggleBtn: document.getElementById('viewToggleBtn'),
@@ -76,6 +76,7 @@ const JOTFORM_CONFIG = {
     currentScale: 1.0,
     pollTimer: null,
     rainStreaks: [],
+    strawberryDrops: [],
     currentView: 'rain' // 'rain' | 'grid'
   };
 
@@ -138,7 +139,22 @@ const JOTFORM_CONFIG = {
       state.rainStreaks.push(createRainStreak(true));
     }
 
+    state.strawberryDrops = Array.from({ length: 11 }, () => createStrawberryDrop(true));
+
     requestAnimationFrame(renderGlowRain);
+  }
+
+  function createStrawberryDrop(randomizeY) {
+    const scale = state.currentScale || 1;
+    return {
+      x: Math.random() * window.innerWidth,
+      y: randomizeY ? Math.random() * window.innerHeight : -Math.random() * window.innerHeight,
+      speed: (0.9 + Math.random() * 1.5) * scale,
+      size: (38.4 + Math.random() * 24) * scale,
+      sway: (7 + Math.random() * 14) * scale,
+      phase: Math.random() * Math.PI * 2,
+      opacity: 0.55 + Math.random() * 0.3
+    };
   }
 
   function createRainStreak(randomizeY) {
@@ -216,6 +232,35 @@ const JOTFORM_CONFIG = {
     }
 
     ctx.globalCompositeOperation = 'source-over';
+
+    // Strawberries share the stars' downward motion and soft luminous trails.
+    if (strawberryImage.complete && strawberryImage.naturalWidth) {
+      for (const drop of state.strawberryDrops) {
+        drop.y += drop.speed;
+        if (drop.y > h + drop.size) {
+          Object.assign(drop, createStrawberryDrop(false));
+        }
+
+        const x = drop.x + Math.sin(drop.y * 0.008 + drop.phase) * drop.sway;
+        const trail = ctx.createLinearGradient(x, drop.y - drop.size * 2.3, x, drop.y);
+        trail.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        trail.addColorStop(1, `rgba(255, 184, 214, ${drop.opacity * 0.45})`);
+
+        ctx.save();
+        ctx.globalAlpha = drop.opacity;
+        ctx.strokeStyle = trail;
+        ctx.lineWidth = Math.max(1, 1.5 * state.currentScale);
+        ctx.beginPath();
+        ctx.moveTo(x, drop.y - drop.size * 2.3);
+        ctx.lineTo(x, drop.y - drop.size * 0.3);
+        ctx.stroke();
+        ctx.shadowColor = 'rgba(255, 130, 185, 0.8)';
+        ctx.shadowBlur = drop.size * 0.5;
+        ctx.drawImage(strawberryImage, x - drop.size / 2, drop.y - drop.size / 2, drop.size, drop.size);
+        ctx.restore();
+      }
+    }
+
     requestAnimationFrame(renderGlowRain);
   }
 
@@ -274,10 +319,6 @@ const JOTFORM_CONFIG = {
     setTimeout(() => {
       // 2. Doctor Name fades in: Top line Dr. [Name], Bottom line "I trust Panadol"
       dom.spotlightName.textContent = submission.fullName;
-      if (dom.spotlightSubClaim) {
-        dom.spotlightSubClaim.textContent = 'I trust Panadol';
-      }
-
       dom.nameView.classList.remove('is-exiting');
       dom.nameView.classList.add('is-active');
 
@@ -295,7 +336,6 @@ const JOTFORM_CONFIG = {
             processNextSubmission();
           } else {
             // Return to idle claim "I trust Panadol"
-            dom.claimText.textContent = 'I trust Panadol';
             dom.claimView.classList.remove('is-exiting');
             dom.claimView.classList.add('is-active');
             state.isSpotlightActive = false;
@@ -466,7 +506,7 @@ const JOTFORM_CONFIG = {
         </div>
         <div class="doctor-card-info">
           <div class="doctor-card-name" title="${escapeHTML(doctorName)}">${escapeHTML(doctorName)}</div>
-          <div class="doctor-card-trust">Trusts Panadol</div>
+          <div class="doctor-card-trust">Trusts <img src="assets/Panadol_logo.png" alt="Panadol"></div>
         </div>
       `;
 
