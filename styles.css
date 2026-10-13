@@ -170,9 +170,10 @@ body {
   justify-self: center;
 }
 
-.logo-panadol {
-  height: calc(140px * var(--ui-scale));
+.logo-haleon {
+  height: calc(38px * var(--ui-scale));
   width: auto;
+  max-width: calc(250px * var(--ui-scale));
   filter: drop-shadow(0 calc(6px * var(--ui-scale)) calc(22px * var(--ui-scale)) rgba(0, 0, 0, 0.45));
 }
 
@@ -277,8 +278,8 @@ body {
     min-width: 0;
   }
 
-  .logo-panadol {
-    height: calc(96px * var(--ui-scale));
+  .logo-haleon {
+    height: calc(34px * var(--ui-scale));
   }
 
   .claim-logo {
