@@ -141,8 +141,8 @@ body {
 
 .top-bar-logos {
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   pointer-events: auto;
 }
@@ -166,8 +166,10 @@ body {
 }
 
 .brand-logo {
-  min-width: calc(220px * var(--ui-scale));
-  justify-self: center;
+  position: fixed;
+  bottom: calc(28px * var(--ui-scale));
+  left: calc(32px * var(--ui-scale));
+  z-index: 50;
 }
 
 .logo-haleon {
@@ -275,7 +277,7 @@ body {
   }
 
   .brand-logo {
-    min-width: 0;
+    left: calc(16px * var(--ui-scale));
   }
 
   .logo-haleon {
@@ -398,6 +400,7 @@ body {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -757,7 +760,7 @@ body.view-mode-grid .glow-rain-canvas {
 }
 
 /* ==========================================================================
-   QR Code (Centered at Bottom)
+   QR Code
    ========================================================================== */
 .qr-section {
   position: fixed;
@@ -772,11 +775,29 @@ body.view-mode-grid .glow-rain-canvas {
   pointer-events: none;
 }
 
+.stage-qr {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  margin-top: calc(48px * var(--ui-scale));
+}
+
+.grid-qr {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.view-mode-grid .grid-qr {
+  opacity: 1;
+  visibility: visible;
+}
+
 .qr-code-wrapper {
   position: relative;
-  padding: calc(8px * var(--ui-scale));
-  background: rgba(255, 255, 255, 0.1);
-  border: calc(1.5px * var(--ui-scale)) solid rgba(255, 255, 255, 0.25);
+  padding: calc(16px * var(--ui-scale));
+  background: #ffffff;
+  border: calc(1.5px * var(--ui-scale)) solid #ffffff;
   border-radius: calc(12px * var(--ui-scale));
   backdrop-filter: blur(calc(8px * var(--ui-scale)));
   -webkit-backdrop-filter: blur(calc(8px * var(--ui-scale)));
@@ -802,5 +823,4 @@ body.view-mode-grid .glow-rain-canvas {
   height: calc(130px * var(--ui-scale));
   object-fit: contain;
   display: block;
-  filter: brightness(1.1) drop-shadow(0 0 calc(8px * var(--ui-scale)) rgba(5, 47, 206, 0.5));
 }

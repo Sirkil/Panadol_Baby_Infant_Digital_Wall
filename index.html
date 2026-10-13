@@ -49,9 +49,6 @@
       <div class="logo-item claim-logo claim-logo-15" title="Gets to work on fever in 15 minutes">
         <img src="assets/15mins_Logo.png" alt="15 minutes" class="header-logo logo-15mins">
       </div>
-      <div class="logo-item brand-logo" title="Haleon">
-        <img src="assets/Haleon_Logo.png" alt="Haleon Logo" class="header-logo logo-haleon">
-      </div>
       <div class="right-logos">
         <div class="logo-item claim-logo claim-logo-70" title="70 years of trust">
           <img src="assets/70_Years.png" alt="70 years of trust" class="header-logo logo-70years">
@@ -59,6 +56,10 @@
       </div>
     </div>
   </header>
+
+  <div class="logo-item brand-logo" title="Haleon">
+    <img src="assets/Haleon_Logo.png" alt="Haleon Logo" class="header-logo logo-haleon">
+  </div>
 
   <!-- View Toggle Button (Rain <-> Grid) -->
   <button class="view-toggle-btn" id="viewToggleBtn" aria-label="Toggle between Rain View and Grid View" title="Switch View">
@@ -79,6 +80,11 @@
     <!-- Claim View -->
     <div class="stage-view claim-view is-active" id="claimView">
       <h1 class="claim-text" id="claimText"><span>I trust</span> <img src="assets/Panadol Baby & Infant logo.png" alt="Panadol"></h1>
+      <div class="qr-section stage-qr">
+        <div class="qr-code-wrapper">
+          <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img">
+        </div>
+      </div>
     </div>
 
     <!-- Spotlight Name View -->
@@ -86,6 +92,11 @@
       <div class="spotlight-content">
         <h2 class="spotlight-doctor-name" id="spotlightName"></h2>
         <p class="spotlight-sub-claim" id="spotlightSubClaim"><span>I trust</span> <img src="assets/Panadol Baby & Infant logo.png" alt="Panadol"></p>
+      </div>
+      <div class="qr-section stage-qr">
+        <div class="qr-code-wrapper">
+          <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img">
+        </div>
       </div>
     </div>
   </main>
@@ -115,8 +126,8 @@
     </div>
   </section>
 
-  <!-- QR Code Section (Bottom Center) -->
-  <section class="qr-section" id="qrSection">
+  <!-- QR code stays at the bottom in grid view, which has no central claim -->
+  <section class="qr-section grid-qr" id="qrSection">
     <div class="qr-code-wrapper">
       <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img" id="qrCodeImg">
     </div>
