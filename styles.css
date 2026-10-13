@@ -441,7 +441,7 @@ body {
 
 .claim-text img {
   display: block;
-  height: calc(149px * var(--ui-scale));
+  height: calc(171.35px * var(--ui-scale));
   width: auto;
   filter: drop-shadow(0 calc(5px * var(--ui-scale)) calc(18px * var(--ui-scale)) rgba(0, 0, 0, 0.32));
 }
@@ -485,7 +485,7 @@ body {
 
 .spotlight-sub-claim img {
   display: block;
-  height: calc(101px * var(--ui-scale));
+  height: calc(116.15px * var(--ui-scale));
   width: auto;
   filter: drop-shadow(0 calc(4px * var(--ui-scale)) calc(14px * var(--ui-scale)) rgba(0, 0, 0, 0.3));
 }
@@ -566,7 +566,7 @@ body.view-mode-grid .glow-rain-canvas {
 
 .grid-main-heading img {
   display: block;
-  height: calc(54px * var(--ui-scale));
+  height: calc(62.1px * var(--ui-scale));
   width: auto;
 }
 
@@ -676,7 +676,7 @@ body.view-mode-grid .glow-rain-canvas {
 
 .doctor-card-trust img {
   display: block;
-  height: calc(24px * var(--ui-scale));
+  height: calc(27.6px * var(--ui-scale));
   width: auto;
 }
 
