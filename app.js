@@ -2,7 +2,7 @@
  * Panadol - Live Community Display Screen
  * 
  * Features:
- * 1. Panadol branding with the 15-minute and 70-year claims highlighted.
+ * 1. Haleon branding and the 70-year claim highlighted.
  * 2. Submission spotlight in center:
  *    - Top line: Dr. [Name]
  *    - Bottom line: "I trust Panadol"
@@ -60,7 +60,7 @@ const JOTFORM_CONFIG = {
     toggleText: document.getElementById('toggleText'),
     namesCountBadge: document.getElementById('namesCountBadge'),
     gridViewSection: document.getElementById('gridViewSection'),
-    gridCardsContainer: document.getElementById('gridCardsContainer'),
+    gridNamesContainer: document.getElementById('gridNamesContainer'),
     gridEmptyMessage: document.getElementById('gridEmptyMessage')
   };
 
@@ -114,6 +114,8 @@ const JOTFORM_CONFIG = {
 
     // Resize the glowing rain canvas
     resizeGlowCanvas();
+
+    if (state.currentView === 'grid') renderGrid();
   }
 
   // =========================================================================
@@ -291,7 +293,7 @@ const JOTFORM_CONFIG = {
     // Add to permanent floating rain and grid list
     addSubmittedName(doctorName);
 
-    // If currently on grid view, re-render grid to show new doctor card
+    // If currently on grid view, re-render to show the new name shape.
     if (state.currentView === 'grid') {
       renderGrid();
     }
@@ -476,42 +478,110 @@ const JOTFORM_CONFIG = {
   }
 
   function renderGrid() {
-    const container = dom.gridCardsContainer;
+    const container = dom.gridNamesContainer;
     const emptyMessage = dom.gridEmptyMessage;
     if (!container) return;
 
+    const previousScrollTop = container.scrollTop;
     container.innerHTML = '';
     const total = state.submittedNames.length;
     updateCounterBadges();
 
     if (total === 0) {
+      container.style.display = 'none';
       if (emptyMessage) emptyMessage.style.display = 'flex';
       return;
     }
 
+    container.style.display = 'block';
     if (emptyMessage) emptyMessage.style.display = 'none';
 
-    // Render cards for all submitted doctors
-    state.submittedNames.forEach((doctorName, idx) => {
-      const card = document.createElement('div');
-      card.className = 'doctor-card';
-      card.style.animationDelay = `${Math.min(idx * 0.03, 0.8)}s`;
+    // Randomize display order without changing the saved submission order.
+    const gridNames = [...state.submittedNames];
+    for (let i = gridNames.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gridNames[i], gridNames[j]] = [gridNames[j], gridNames[i]];
+    }
 
-      card.innerHTML = `
-        <div class="doctor-card-avatar" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </div>
-        <div class="doctor-card-info">
-          <div class="doctor-card-name" title="${escapeHTML(doctorName)}">${escapeHTML(doctorName)}</div>
-          <div class="doctor-card-trust">Trusts <img src="assets/Panadol_logo.png" alt="Panadol"></div>
-        </div>
-      `;
+    const field = document.createElement('div');
+    field.className = 'grid-name-field';
+    container.appendChild(field);
 
-      container.appendChild(card);
+    gridNames.forEach((doctorName, idx) => {
+      const item = document.createElement('div');
+      item.className = `grid-floating-name size-${(idx % 3) + 1}`;
+      item.style.animationDelay = `${Math.min(idx * 0.03, 0.8)}s`;
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = doctorName;
+
+      const trust = document.createElement('div');
+      trust.className = 'trust';
+      trust.append('Trust ');
+
+      const logo = document.createElement('img');
+      logo.src = 'assets/Panadol Baby & Infant logo.png';
+      logo.alt = 'Panadol Baby & Infant';
+      trust.appendChild(logo);
+
+      item.append(name, trust);
+      field.appendChild(item);
     });
+
+    scatterGridNames(container, field);
+    container.scrollTop = previousScrollTop;
+  }
+
+  function scatterGridNames(container, field) {
+    const scale = state.currentScale || 1;
+    const verticalEdge = Math.max(8, 18 * scale);
+    const gap = Math.max(10, 24 * scale);
+    const usableWidth = Math.max(40, container.clientWidth - 14);
+    const items = Array.from(field.children);
+    const sizes = items.map(item => {
+      item.style.maxWidth = `${usableWidth}px`;
+      return { width: item.offsetWidth, height: item.offsetHeight };
+    });
+    const totalArea = sizes.reduce((sum, size) => sum + (size.width + gap) * (size.height + gap), 0);
+    let fieldHeight = Math.max(container.clientHeight, Math.ceil(totalArea / (usableWidth * 0.34)));
+    const placed = [];
+
+    items.forEach((item, index) => {
+      const { width, height } = sizes[index];
+      const maxX = Math.max(0, container.clientWidth - 14 - width);
+      let position = null;
+
+      for (let expansion = 0; expansion < 20 && !position; expansion++) {
+        const maxY = Math.max(verticalEdge, fieldHeight - verticalEdge - height);
+        for (let attempt = 0; attempt < 180; attempt++) {
+          const x = Math.random() * maxX;
+          const y = verticalEdge + Math.random() * (maxY - verticalEdge);
+          const overlaps = placed.some(other =>
+            x < other.x + other.width + gap &&
+            x + width + gap > other.x &&
+            y < other.y + other.height + gap &&
+            y + height + gap > other.y
+          );
+          if (!overlaps) {
+            position = { x, y, width, height };
+            break;
+          }
+        }
+        if (!position) fieldHeight += Math.max(height * 2 + gap, container.clientHeight * 0.35);
+      }
+
+      if (!position) {
+        position = { x: 0, y: fieldHeight + gap, width, height };
+        fieldHeight = position.y + height + verticalEdge;
+      }
+
+      placed.push(position);
+      item.style.left = `${position.x}px`;
+      item.style.top = `${position.y}px`;
+    });
+
+    field.style.height = `${Math.ceil(fieldHeight)}px`;
   }
 
   // =========================================================================
@@ -671,18 +741,6 @@ const JOTFORM_CONFIG = {
       const parts = name.trim().split(/\s+/);
       setTimeout(() => queueSubmission(parts[0], parts.slice(1).join(' ')), 800);
     }
-  }
-
-  // =========================================================================
-  // Helper
-  // =========================================================================
-  function escapeHTML(str) {
-    return (str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
   }
 
   // =========================================================================
