@@ -141,18 +141,21 @@ const JOTFORM_CONFIG = {
       state.rainStreaks.push(createRainStreak(true));
     }
 
-    state.strawberryDrops = Array.from({ length: 11 }, () => createStrawberryDrop(true));
+    state.strawberryDrops = Array.from({ length: 11 }, (_, index) => createStrawberryDrop(true, index % 3));
 
     requestAnimationFrame(renderGlowRain);
   }
 
-  function createStrawberryDrop(randomizeY) {
+  function createStrawberryDrop(randomizeY, sizeTier) {
     const scale = state.currentScale || 1;
+    const sizeRanges = [[56, 76], [82, 108], [116, 150]];
+    const [minimumSize, maximumSize] = sizeRanges[sizeTier];
     return {
       x: Math.random() * window.innerWidth,
       y: randomizeY ? Math.random() * window.innerHeight : -Math.random() * window.innerHeight,
       speed: (0.9 + Math.random() * 1.5) * scale,
-      size: (38.4 + Math.random() * 24) * scale,
+      size: (minimumSize + Math.random() * (maximumSize - minimumSize)) * scale,
+      sizeTier,
       sway: (7 + Math.random() * 14) * scale,
       phase: Math.random() * Math.PI * 2,
       opacity: 0.55 + Math.random() * 0.3
@@ -240,7 +243,7 @@ const JOTFORM_CONFIG = {
       for (const drop of state.strawberryDrops) {
         drop.y += drop.speed;
         if (drop.y > h + drop.size) {
-          Object.assign(drop, createStrawberryDrop(false));
+          Object.assign(drop, createStrawberryDrop(false, drop.sizeTier));
         }
 
         const x = drop.x + Math.sin(drop.y * 0.008 + drop.phase) * drop.sway;

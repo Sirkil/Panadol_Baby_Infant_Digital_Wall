@@ -76,11 +76,6 @@
     <!-- Claim View -->
     <div class="stage-view claim-view is-active" id="claimView">
       <h1 class="claim-text" id="claimText"><span>I trust</span> <img src="assets/Panadol Baby & Infant logo.png" alt="Panadol"></h1>
-      <div class="qr-section stage-qr">
-        <div class="qr-code-wrapper">
-          <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img">
-        </div>
-      </div>
     </div>
 
     <!-- Spotlight Name View -->
@@ -88,11 +83,6 @@
       <div class="spotlight-content">
         <h2 class="spotlight-doctor-name" id="spotlightName"></h2>
         <p class="spotlight-sub-claim" id="spotlightSubClaim"><span>I trust</span> <img src="assets/Panadol Baby & Infant logo.png" alt="Panadol"></p>
-      </div>
-      <div class="qr-section stage-qr">
-        <div class="qr-code-wrapper">
-          <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img">
-        </div>
       </div>
     </div>
   </main>
@@ -122,8 +112,8 @@
     </div>
   </section>
 
-  <!-- QR code stays at the bottom in grid view, which has no central claim -->
-  <section class="qr-section grid-qr" id="qrSection">
+  <!-- One fixed QR code remains visible through every view and name transition. -->
+  <section class="qr-section" id="qrSection">
     <div class="qr-code-wrapper">
       <img src="assets/QrCode.png" alt="Scan QR Code" class="qr-code-img" id="qrCodeImg">
     </div>
