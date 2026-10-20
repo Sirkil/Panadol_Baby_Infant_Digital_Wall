@@ -466,7 +466,7 @@ body {
 
 .spotlight-doctor-name {
   font-family: var(--font-family-display);
-  font-size: min(calc(240px * var(--ui-scale)), 16vw);
+  font-size: min(calc(120px * var(--ui-scale)), 8vw);
   font-weight: 900;
   line-height: 1.08;
   letter-spacing: -0.025em;
