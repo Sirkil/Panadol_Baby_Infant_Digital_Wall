@@ -427,6 +427,18 @@ body {
   transform: scale(1.03) translateY(calc(-15px * var(--ui-scale)));
 }
 
+/* Keep every Panadol mark in a square without distorting the artwork. */
+.claim-text img,
+.spotlight-sub-claim img,
+.grid-main-heading img,
+.grid-floating-name .trust img {
+  width: var(--panadol-logo-size);
+  height: var(--panadol-logo-size);
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* Main claim: text paired with the Panadol logo */
 .claim-text {
   display: inline-flex;
@@ -447,8 +459,7 @@ body {
 
 .claim-text img {
   display: block;
-  height: min(calc(342.7px * var(--ui-scale)), 29vw);
-  width: auto;
+  --panadol-logo-size: min(calc(342.7px * var(--ui-scale)), 29vw);
   filter: drop-shadow(0 calc(5px * var(--ui-scale)) calc(18px * var(--ui-scale)) rgba(0, 0, 0, 0.32));
 }
 
@@ -492,8 +503,7 @@ body {
 
 .spotlight-sub-claim img {
   display: block;
-  height: min(calc(232.3px * var(--ui-scale)), 22vw);
-  width: auto;
+  --panadol-logo-size: min(calc(232.3px * var(--ui-scale)), 22vw);
   filter: drop-shadow(0 calc(4px * var(--ui-scale)) calc(14px * var(--ui-scale)) rgba(0, 0, 0, 0.3));
 }
 
@@ -569,8 +579,7 @@ body.view-mode-grid .raining-names-container {
 
 .grid-main-heading img {
   display: block;
-  height: calc(97.75px * var(--ui-scale));
-  width: auto;
+  --panadol-logo-size: calc(97.75px * var(--ui-scale));
 }
 
 .grid-sub-heading {
@@ -654,13 +663,12 @@ body.view-mode-grid .raining-names-container {
 
 .grid-floating-name .trust img {
   display: block;
-  height: calc(39.1px * var(--ui-scale));
-  width: auto;
+  --panadol-logo-size: calc(39.1px * var(--ui-scale));
 }
 
 @media (max-width: 600px) {
   .grid-main-heading { font-size: calc(40.8px * var(--ui-scale)); }
-  .grid-main-heading img { height: calc(76.245px * var(--ui-scale)); }
+  .grid-main-heading img { --panadol-logo-size: calc(76.245px * var(--ui-scale)); }
   .grid-sub-heading { font-size: calc(22px * var(--ui-scale)); }
 }
 
@@ -715,12 +723,14 @@ body.view-mode-grid .raining-names-container {
   position: absolute;
   top: 0;
   left: 0;
+  max-width: 92vw;
   color: #ffffff;
   font-family: var(--font-family-display);
   font-size: calc(1.65rem * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: center;
   pointer-events: none;
   will-change: transform;
 

@@ -73,8 +73,11 @@ const JOTFORM_CONFIG = {
     submittedNames: [],
     seenSubmissionIds: new Set(),
     floatingBadges: [],
+    nextRainBadgeIndex: 0,
     currentScale: 1.0,
     pollTimer: null,
+    pollInProgress: false,
+    hasLoadedSubmissionHistory: false,
     rainStreaks: [],
     strawberryDrops: [],
     currentView: 'rain' // 'rain' | 'grid'
@@ -294,10 +297,10 @@ const JOTFORM_CONFIG = {
     });
 
     // Add to permanent floating rain and grid list
-    addSubmittedName(doctorName);
+    const added = addSubmittedName(doctorName);
 
     // If currently on grid view, re-render to show the new name shape.
-    if (state.currentView === 'grid') {
+    if (added && state.currentView === 'grid') {
       renderGrid();
     }
 
@@ -355,16 +358,17 @@ const JOTFORM_CONFIG = {
   // =========================================================================
   // Raining Names Engine (Names Fall Downward Like Glowing Rain)
   // =========================================================================
+  const RAIN_VISIBLE_FRACTION = 0.7;
+
   function addSubmittedName(nameString, skipAnimation = false) {
-    if (!nameString) return;
+    if (!nameString) return false;
 
-    if (!state.submittedNames.includes(nameString)) {
-      state.submittedNames.push(nameString);
-      saveSubmittedNames();
-      updateCounterBadges();
-    }
-
+    if (state.submittedNames.includes(nameString)) return false;
+    state.submittedNames.push(nameString);
+    saveSubmittedNames();
+    updateCounterBadges();
     spawnFloatingBadge(nameString, skipAnimation);
+    return true;
   }
 
   function updateCounterBadges() {
@@ -395,6 +399,7 @@ const JOTFORM_CONFIG = {
     const badgeObj = {
       el: labelEl,
       name: nameString,
+      active: false,
       relX: relX,
       relY: startRelY,
       // Fall speed
@@ -408,7 +413,49 @@ const JOTFORM_CONFIG = {
     };
 
     labelEl.style.opacity = badgeObj.opacity;
+    labelEl.style.display = 'none';
     state.floatingBadges.push(badgeObj);
+    updateRainBadgeCount(badgeObj);
+  }
+
+  function updateRainBadgeCount(newBadge) {
+    const badges = state.floatingBadges;
+    const target = Math.max(1, Math.round(badges.length * RAIN_VISIBLE_FRACTION));
+    let activeCount = badges.filter(badge => badge.active).length;
+
+    // New submissions join the rain immediately, even when the target count
+    // has not increased.
+    if (newBadge && activeCount >= target) {
+      const outgoing = badges
+        .filter(badge => badge.active)
+        .reduce((lowest, badge) => badge.relY > lowest.relY ? badge : lowest);
+      outgoing.active = false;
+      outgoing.el.style.display = 'none';
+      activeCount--;
+    }
+
+    while (activeCount < target) {
+      const badge = newBadge && !newBadge.active
+        ? newBadge
+        : badges.find(candidate => !candidate.active);
+      if (!badge) break;
+      badge.active = true;
+      badge.el.style.display = '';
+      activeCount++;
+    }
+  }
+
+  function nextInactiveRainBadge(exclude) {
+    const badges = state.floatingBadges;
+    for (let step = 0; step < badges.length; step++) {
+      const index = (state.nextRainBadgeIndex + step) % badges.length;
+      const candidate = badges[index];
+      if (!candidate.active && candidate !== exclude) {
+        state.nextRainBadgeIndex = (index + 1) % badges.length;
+        return candidate;
+      }
+    }
+    return null;
   }
 
   function animateFloatingBadges() {
@@ -424,12 +471,24 @@ const JOTFORM_CONFIG = {
 
     for (let i = 0; i < state.floatingBadges.length; i++) {
       const b = state.floatingBadges[i];
+      if (!b.active) continue;
 
       // Steady downward fall
       b.relY += b.fallSpeed;
 
-      // When a name falls past the bottom, respawn it at the top
+      // Rotate in another submitted name after each fall so every name
+      // appears over time while only 70% are in the rain at once.
       if (b.relY > 1.08) {
+        const replacement = nextInactiveRainBadge(b);
+        if (replacement) {
+          b.active = false;
+          b.el.style.display = 'none';
+          replacement.active = true;
+          replacement.el.style.display = '';
+          replacement.relY = -0.06 - Math.random() * 0.10;
+          replacement.relX = 0.04 + Math.random() * 0.88;
+          continue;
+        }
         b.relY = -0.06 - Math.random() * 0.10;
         b.relX = 0.04 + Math.random() * 0.88;
       }
@@ -438,7 +497,10 @@ const JOTFORM_CONFIG = {
       b.swayPhase += b.swayFrequency;
       const swayX = Math.sin(b.swayPhase) * (b.swayAmplitude * scale);
 
-      const currentX = b.relX * vWidth + swayX;
+      const currentX = Math.max(0, Math.min(
+        b.relX * vWidth + swayX,
+        vWidth - b.el.offsetWidth * b.scale - 8
+      ));
       const currentY = b.relY * vHeight;
 
       // Subtle opacity reduction when passing directly behind center text
@@ -652,48 +714,67 @@ const JOTFORM_CONFIG = {
     const formId = extractFormId(JOTFORM_CONFIG.formLinkOrId);
     const apiKey = (JOTFORM_CONFIG.apiKey || '').trim();
 
-    if (!formId || !apiKey || apiKey.includes('PASTE_YOUR_')) {
+    if (!formId || !apiKey || apiKey.includes('PASTE_YOUR_') || state.pollInProgress) {
       return;
     }
 
+    state.pollInProgress = true;
     try {
-      const endpoint = `https://api.jotform.com/form/${encodeURIComponent(formId)}/submissions?apiKey=${encodeURIComponent(apiKey)}&limit=15&orderby=created_at`;
-      const response = await fetch(endpoint, {
-        headers: { 'Accept': 'application/json' }
-      });
+      const pageSize = 100;
+      const isHistoryLoad = !state.hasLoadedSubmissionHistory;
+      const submissions = [];
+      let offset = 0;
 
-      if (!response.ok) return;
+      // Load every page once at startup. Later checks stop at the first known
+      // submission, but continue across pages if more than one page is new.
+      while (true) {
+        const endpoint = `https://api.jotform.com/form/${encodeURIComponent(formId)}/submissions?apiKey=${encodeURIComponent(apiKey)}&limit=${pageSize}&offset=${offset}&orderby=created_at`;
+        const response = await fetch(endpoint, {
+          headers: { 'Accept': 'application/json' }
+        });
 
-      const data = await response.json();
-      if (data.responseCode !== 200 || !data.content) return;
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.responseCode !== 200 || !Array.isArray(data.content)) return;
 
-      const submissions = data.content || [];
-      const newItems = [];
+        const page = data.content;
+        const reachedKnownSubmission = page.some(item => state.seenSubmissionIds.has(item.id));
+        submissions.push(...page);
 
-      for (const item of submissions) {
-        const subId = item.id;
-        if (!state.seenSubmissionIds.has(subId)) {
-          const nameData = extractNameFromSubmission(item);
-          if (nameData && (nameData.first || nameData.last)) {
-            newItems.push({
-              id: subId,
-              first: nameData.first,
-              last: nameData.last
-            });
-          } else {
-            state.seenSubmissionIds.add(subId);
-            saveSeenIds();
-          }
-        }
+        if (page.length < pageSize || (!isHistoryLoad && reachedKnownSubmission)) break;
+        offset += page.length;
       }
 
-      // Queue submissions in chronological order
-      newItems.reverse().forEach(item => {
-        queueSubmission(item.first, item.last, item.id);
+      // Process oldest first. History fills both views without making the
+      // spotlight replay every submission ever received.
+      let namesChanged = false;
+      submissions.reverse().forEach((item, index) => {
+        const nameData = extractNameFromSubmission(item);
+        if (nameData && (nameData.first || nameData.last)) {
+          if (addSubmittedName(formatDoctorName(`${nameData.first} ${nameData.last}`.trim()))) {
+            namesChanged = true;
+          }
+          if (!state.seenSubmissionIds.has(item.id)) {
+            const isRecent = !isHistoryLoad || index >= submissions.length - 15;
+            if (isRecent) {
+              queueSubmission(nameData.first, nameData.last, item.id);
+            } else {
+              state.seenSubmissionIds.add(item.id);
+            }
+          }
+        } else if (item.id) {
+          state.seenSubmissionIds.add(item.id);
+        }
       });
+
+      saveSeenIds();
+      state.hasLoadedSubmissionHistory = true;
+      if (namesChanged && state.currentView === 'grid') renderGrid();
 
     } catch (err) {
       console.warn('Jotform check:', err);
+    } finally {
+      state.pollInProgress = false;
     }
   }
 
