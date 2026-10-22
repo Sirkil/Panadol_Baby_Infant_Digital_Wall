@@ -430,8 +430,7 @@ body {
 /* Keep every Panadol mark in a square without distorting the artwork. */
 .claim-text img,
 .spotlight-sub-claim img,
-.grid-main-heading img,
-.grid-floating-name .trust img {
+.grid-main-heading img {
   width: var(--panadol-logo-size);
   height: var(--panadol-logo-size);
   aspect-ratio: 1 / 1;
@@ -595,10 +594,7 @@ body.view-mode-grid .raining-names-container {
   width: 90vw;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  overflow: hidden;
 }
 
 .grid-name-field {
@@ -607,24 +603,13 @@ body.view-mode-grid .raining-names-container {
   min-height: 100%;
 }
 
-.grid-names-container::-webkit-scrollbar {
-  width: calc(8px * var(--ui-scale));
-}
-.grid-names-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 999px;
-}
-.grid-names-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
 .grid-floating-name {
   position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: max-content;
-  padding: calc(6px * var(--ui-scale)) calc(10px * var(--ui-scale));
+  padding: calc(6px * var(--grid-scale, var(--ui-scale))) calc(10px * var(--grid-scale, var(--ui-scale)));
   text-align: center;
   animation: gridNameFadeIn 0.5s ease-out both;
 }
@@ -636,35 +621,17 @@ body.view-mode-grid .raining-names-container {
 
 .grid-floating-name .name {
   font-family: var(--font-family-display);
-  font-size: calc(27px * var(--ui-scale));
+  font-size: calc(27px * var(--grid-scale, var(--ui-scale)));
   font-weight: 800;
   color: #ffffff;
   line-height: 1.15;
   overflow-wrap: anywhere;
-  text-shadow: 0 0 calc(12px * var(--ui-scale)) rgba(255, 255, 255, 0.45),
-               0 calc(3px * var(--ui-scale)) calc(15px * var(--ui-scale)) rgba(4, 8, 89, 0.75);
+  text-shadow: 0 0 calc(12px * var(--grid-scale, var(--ui-scale))) rgba(255, 255, 255, 0.45),
+               0 calc(3px * var(--grid-scale, var(--ui-scale))) calc(15px * var(--grid-scale, var(--ui-scale))) rgba(4, 8, 89, 0.75);
 }
 
-.grid-floating-name.size-2 .name { font-size: calc(30px * var(--ui-scale)); }
-.grid-floating-name.size-3 .name { font-size: calc(24px * var(--ui-scale)); }
-
-.grid-floating-name .trust {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(4px * var(--ui-scale));
-  font-family: var(--font-family-body);
-  font-size: calc(15px * var(--ui-scale));
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
-  margin-top: calc(3px * var(--ui-scale));
-  text-shadow: 0 calc(2px * var(--ui-scale)) calc(10px * var(--ui-scale)) rgba(4, 8, 89, 0.7);
-}
-
-.grid-floating-name .trust img {
-  display: block;
-  --panadol-logo-size: calc(39.1px * var(--ui-scale));
-}
+.grid-floating-name.size-2 .name { font-size: calc(30px * var(--grid-scale, var(--ui-scale))); }
+.grid-floating-name.size-3 .name { font-size: calc(24px * var(--grid-scale, var(--ui-scale))); }
 
 @media (max-width: 600px) {
   .grid-main-heading { font-size: calc(40.8px * var(--ui-scale)); }

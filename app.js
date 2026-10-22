@@ -78,8 +78,6 @@ const JOTFORM_CONFIG = {
     pollTimer: null,
     pollInProgress: false,
     hasLoadedSubmissionHistory: false,
-    gridScrollTimer: null,
-    lastGridInteractionAt: 0,
     rainStreaks: [],
     strawberryDrops: [],
     currentView: 'rain' // 'rain' | 'grid'
@@ -535,11 +533,8 @@ const JOTFORM_CONFIG = {
       if (dom.toggleText) dom.toggleText.textContent = 'Rain View';
       if (dom.toggleIcon) dom.toggleIcon.innerHTML = RAIN_ICON_SVG;
       if (dom.viewToggleBtn) dom.viewToggleBtn.title = 'Switch to Rain View';
-      if (dom.gridNamesContainer) dom.gridNamesContainer.scrollTop = 0;
       renderGrid();
     } else {
-      clearInterval(state.gridScrollTimer);
-      state.gridScrollTimer = null;
       document.body.classList.remove('view-mode-grid');
       if (dom.toggleText) dom.toggleText.textContent = 'Grid View';
       if (dom.toggleIcon) dom.toggleIcon.innerHTML = GRID_ICON_SVG;
@@ -552,7 +547,6 @@ const JOTFORM_CONFIG = {
     const emptyMessage = dom.gridEmptyMessage;
     if (!container) return;
 
-    const previousScrollTop = container.scrollTop;
     container.innerHTML = '';
     const total = state.submittedNames.length;
     updateCounterBadges();
@@ -586,40 +580,63 @@ const JOTFORM_CONFIG = {
       name.className = 'name';
       name.textContent = doctorName;
 
-      const trust = document.createElement('div');
-      trust.className = 'trust';
-      trust.append('Trust ');
-
-      const logo = document.createElement('img');
-      logo.src = 'assets/Panadol Baby & Infant logo.png';
-      logo.alt = 'Panadol Baby & Infant';
-      trust.appendChild(logo);
-
-      item.append(name, trust);
+      item.appendChild(name);
       field.appendChild(item);
     });
 
     scatterGridNames(container, field);
-    container.scrollTop = previousScrollTop;
-    startGridScroll();
   }
 
   function scatterGridNames(container, field) {
     const scale = state.currentScale || 1;
-    const edge = Math.max(8, 16 * scale);
-    const horizontalGap = Math.max(10, 22 * scale);
-    const verticalGap = Math.max(8, 14 * scale);
-    const usableWidth = Math.max(40, container.clientWidth - edge * 2);
     const items = Array.from(field.children);
-    const sizes = items.map(item => {
-      item.style.maxWidth = `${Math.min(usableWidth, 330 * scale)}px`;
-      return { width: item.offsetWidth, height: item.offsetHeight };
-    });
-    const slotWidth = Math.max(...sizes.map(size => size.width)) + horizontalGap;
-    const slotHeight = Math.max(...sizes.map(size => size.height)) + verticalGap;
-    const columns = Math.max(1, Math.floor((usableWidth + horizontalGap) / slotWidth));
-    const rows = Math.ceil(items.length / columns);
-    const slots = Array.from({ length: items.length }, (_, index) => index);
+    const width = Math.max(1, container.clientWidth);
+    const height = Math.max(1, container.clientHeight);
+
+    function measure(density) {
+      field.style.setProperty('--grid-scale', (scale * density).toFixed(5));
+      const edge = Math.max(1, 12 * scale * density);
+      const horizontalGap = Math.max(1, 16 * scale * density);
+      const verticalGap = Math.max(1, 12 * scale * density);
+      const usableWidth = Math.max(1, width - edge * 2);
+      const usableHeight = Math.max(1, height - edge * 2);
+      let widest = 0;
+      let tallest = 0;
+
+      items.forEach(item => {
+        item.style.maxWidth = `${Math.max(1, Math.min(usableWidth - horizontalGap, 320 * scale))}px`;
+        widest = Math.max(widest, item.offsetWidth);
+        tallest = Math.max(tallest, item.offsetHeight);
+      });
+
+      const columns = Math.max(1, Math.min(items.length,
+        Math.floor((usableWidth + horizontalGap) / (widest + horizontalGap))));
+      const rows = Math.ceil(items.length / columns);
+      const cellWidth = usableWidth / columns;
+      const cellHeight = usableHeight / rows;
+      return {
+        edge, columns, rows, cellWidth, cellHeight,
+        fits: widest + horizontalGap <= cellWidth && tallest + verticalGap <= cellHeight
+      };
+    }
+
+    // Use the largest readable size that places every name inside the viewport.
+    let density = 0.82;
+    let layout = measure(density);
+    if (!layout.fits) {
+      let lower = 0.01;
+      let upper = density;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const middle = (lower + upper) / 2;
+        const candidate = measure(middle);
+        if (candidate.fits) lower = middle;
+        else upper = middle;
+      }
+      density = lower;
+      layout = measure(density);
+    }
+
+    const slots = Array.from({ length: layout.columns * layout.rows }, (_, index) => index);
     for (let i = slots.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [slots[i], slots[j]] = [slots[j], slots[i]];
@@ -627,32 +644,15 @@ const JOTFORM_CONFIG = {
 
     items.forEach((item, index) => {
       const slot = slots[index];
-      const column = slot % columns;
-      const row = Math.floor(slot / columns);
-      const xJitter = Math.max(0, slotWidth - horizontalGap - sizes[index].width);
-      const yJitter = Math.max(0, slotHeight - verticalGap - sizes[index].height);
-      item.style.left = `${edge + column * slotWidth + Math.random() * xJitter}px`;
-      item.style.top = `${edge + row * slotHeight + Math.random() * yJitter}px`;
+      const column = slot % layout.columns;
+      const row = Math.floor(slot / layout.columns);
+      const xJitter = Math.max(0, layout.cellWidth - item.offsetWidth);
+      const yJitter = Math.max(0, layout.cellHeight - item.offsetHeight);
+      item.style.left = `${layout.edge + column * layout.cellWidth + Math.random() * xJitter}px`;
+      item.style.top = `${layout.edge + row * layout.cellHeight + Math.random() * yJitter}px`;
     });
 
-    field.style.height = `${Math.max(container.clientHeight, Math.ceil(edge * 2 + rows * slotHeight))}px`;
-  }
-
-  function startGridScroll() {
-    clearInterval(state.gridScrollTimer);
-    const container = dom.gridNamesContainer;
-    if (state.currentView !== 'grid' || !container || container.scrollHeight <= container.clientHeight) return;
-
-    // The wall advances through overflow automatically, so names beyond the
-    // first screen are still shown even when nobody touches the display.
-    state.gridScrollTimer = setInterval(() => {
-      if (Date.now() - state.lastGridInteractionAt < 30000) return;
-      const bottom = container.scrollHeight - container.clientHeight;
-      const next = container.scrollTop >= bottom - 2
-        ? 0
-        : Math.min(bottom, container.scrollTop + container.clientHeight * 0.8);
-      container.scrollTo({ top: next, behavior: 'smooth' });
-    }, 8000);
+    field.style.height = `${height}px`;
   }
 
   // =========================================================================
@@ -846,13 +846,6 @@ const JOTFORM_CONFIG = {
     // Setup view toggle button
     if (dom.viewToggleBtn) {
       dom.viewToggleBtn.addEventListener('click', toggleView);
-    }
-    if (dom.gridNamesContainer) {
-      ['wheel', 'touchstart', 'pointerdown'].forEach(eventName => {
-        dom.gridNamesContainer.addEventListener(eventName, () => {
-          state.lastGridInteractionAt = Date.now();
-        });
-      });
     }
 
     // Keyboard shortcut: Press 'v' or 'g' to toggle view
