@@ -78,6 +78,8 @@ const JOTFORM_CONFIG = {
     pollTimer: null,
     pollInProgress: false,
     hasLoadedSubmissionHistory: false,
+    gridScrollTimer: null,
+    lastGridInteractionAt: 0,
     rainStreaks: [],
     strawberryDrops: [],
     currentView: 'rain' // 'rain' | 'grid'
@@ -533,8 +535,11 @@ const JOTFORM_CONFIG = {
       if (dom.toggleText) dom.toggleText.textContent = 'Rain View';
       if (dom.toggleIcon) dom.toggleIcon.innerHTML = RAIN_ICON_SVG;
       if (dom.viewToggleBtn) dom.viewToggleBtn.title = 'Switch to Rain View';
+      if (dom.gridNamesContainer) dom.gridNamesContainer.scrollTop = 0;
       renderGrid();
     } else {
+      clearInterval(state.gridScrollTimer);
+      state.gridScrollTimer = null;
       document.body.classList.remove('view-mode-grid');
       if (dom.toggleText) dom.toggleText.textContent = 'Grid View';
       if (dom.toggleIcon) dom.toggleIcon.innerHTML = GRID_ICON_SVG;
@@ -596,57 +601,58 @@ const JOTFORM_CONFIG = {
 
     scatterGridNames(container, field);
     container.scrollTop = previousScrollTop;
+    startGridScroll();
   }
 
   function scatterGridNames(container, field) {
     const scale = state.currentScale || 1;
-    const verticalEdge = Math.max(8, 18 * scale);
-    const gap = Math.max(10, 24 * scale);
-    const usableWidth = Math.max(40, container.clientWidth - 14);
+    const edge = Math.max(8, 16 * scale);
+    const horizontalGap = Math.max(10, 22 * scale);
+    const verticalGap = Math.max(8, 14 * scale);
+    const usableWidth = Math.max(40, container.clientWidth - edge * 2);
     const items = Array.from(field.children);
     const sizes = items.map(item => {
-      item.style.maxWidth = `${usableWidth}px`;
+      item.style.maxWidth = `${Math.min(usableWidth, 330 * scale)}px`;
       return { width: item.offsetWidth, height: item.offsetHeight };
     });
-    const totalArea = sizes.reduce((sum, size) => sum + (size.width + gap) * (size.height + gap), 0);
-    let fieldHeight = Math.max(container.clientHeight, Math.ceil(totalArea / (usableWidth * 0.34)));
-    const placed = [];
+    const slotWidth = Math.max(...sizes.map(size => size.width)) + horizontalGap;
+    const slotHeight = Math.max(...sizes.map(size => size.height)) + verticalGap;
+    const columns = Math.max(1, Math.floor((usableWidth + horizontalGap) / slotWidth));
+    const rows = Math.ceil(items.length / columns);
+    const slots = Array.from({ length: items.length }, (_, index) => index);
+    for (let i = slots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+    }
 
     items.forEach((item, index) => {
-      const { width, height } = sizes[index];
-      const maxX = Math.max(0, container.clientWidth - 14 - width);
-      let position = null;
-
-      for (let expansion = 0; expansion < 20 && !position; expansion++) {
-        const maxY = Math.max(verticalEdge, fieldHeight - verticalEdge - height);
-        for (let attempt = 0; attempt < 180; attempt++) {
-          const x = Math.random() * maxX;
-          const y = verticalEdge + Math.random() * (maxY - verticalEdge);
-          const overlaps = placed.some(other =>
-            x < other.x + other.width + gap &&
-            x + width + gap > other.x &&
-            y < other.y + other.height + gap &&
-            y + height + gap > other.y
-          );
-          if (!overlaps) {
-            position = { x, y, width, height };
-            break;
-          }
-        }
-        if (!position) fieldHeight += Math.max(height * 2 + gap, container.clientHeight * 0.35);
-      }
-
-      if (!position) {
-        position = { x: 0, y: fieldHeight + gap, width, height };
-        fieldHeight = position.y + height + verticalEdge;
-      }
-
-      placed.push(position);
-      item.style.left = `${position.x}px`;
-      item.style.top = `${position.y}px`;
+      const slot = slots[index];
+      const column = slot % columns;
+      const row = Math.floor(slot / columns);
+      const xJitter = Math.max(0, slotWidth - horizontalGap - sizes[index].width);
+      const yJitter = Math.max(0, slotHeight - verticalGap - sizes[index].height);
+      item.style.left = `${edge + column * slotWidth + Math.random() * xJitter}px`;
+      item.style.top = `${edge + row * slotHeight + Math.random() * yJitter}px`;
     });
 
-    field.style.height = `${Math.ceil(fieldHeight)}px`;
+    field.style.height = `${Math.max(container.clientHeight, Math.ceil(edge * 2 + rows * slotHeight))}px`;
+  }
+
+  function startGridScroll() {
+    clearInterval(state.gridScrollTimer);
+    const container = dom.gridNamesContainer;
+    if (state.currentView !== 'grid' || !container || container.scrollHeight <= container.clientHeight) return;
+
+    // The wall advances through overflow automatically, so names beyond the
+    // first screen are still shown even when nobody touches the display.
+    state.gridScrollTimer = setInterval(() => {
+      if (Date.now() - state.lastGridInteractionAt < 30000) return;
+      const bottom = container.scrollHeight - container.clientHeight;
+      const next = container.scrollTop >= bottom - 2
+        ? 0
+        : Math.min(bottom, container.scrollTop + container.clientHeight * 0.8);
+      container.scrollTo({ top: next, behavior: 'smooth' });
+    }, 8000);
   }
 
   // =========================================================================
@@ -840,6 +846,13 @@ const JOTFORM_CONFIG = {
     // Setup view toggle button
     if (dom.viewToggleBtn) {
       dom.viewToggleBtn.addEventListener('click', toggleView);
+    }
+    if (dom.gridNamesContainer) {
+      ['wheel', 'touchstart', 'pointerdown'].forEach(eventName => {
+        dom.gridNamesContainer.addEventListener(eventName, () => {
+          state.lastGridInteractionAt = Date.now();
+        });
+      });
     }
 
     // Keyboard shortcut: Press 'v' or 'g' to toggle view
