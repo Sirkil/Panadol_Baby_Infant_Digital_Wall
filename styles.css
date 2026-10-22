@@ -477,7 +477,7 @@ body {
 
 .spotlight-doctor-name {
   font-family: var(--font-family-display);
-  font-size: min(calc(120px * var(--ui-scale)), 8vw);
+  font-size: min(calc(108px * var(--ui-scale)), 7.2vw);
   font-weight: 900;
   line-height: 1.08;
   letter-spacing: -0.025em;
@@ -503,7 +503,7 @@ body {
 
 .spotlight-sub-claim img {
   display: block;
-  --panadol-logo-size: min(calc(232.3px * var(--ui-scale)), 22vw);
+  --panadol-logo-size: min(calc(209.07px * var(--ui-scale)), 19.8vw);
   filter: drop-shadow(0 calc(4px * var(--ui-scale)) calc(14px * var(--ui-scale)) rgba(0, 0, 0, 0.3));
 }
 
